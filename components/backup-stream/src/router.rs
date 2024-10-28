@@ -654,6 +654,8 @@ impl RouterInner {
                     "task" => ?task_info,
                 );
 
+                info!("This is a test!!");
+
                 if let Err(e) = self.scheduler.schedule(Task::Flush(name.clone())) {
                     error!("backup stream schedule task failed"; "error" => ?e);
                     task_info.set_flushing_status(false);
