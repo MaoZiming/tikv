@@ -149,6 +149,19 @@ impl<EK: KvEngine, R: ApplyResReporter> Apply<EK, R> {
             return Ok(());
         }
         util::check_key_in_region(key, self.region())?;
+
+        info!(
+            self.logger,
+            "apply_put command for region";
+            "region_id" => self.region().get_id(),
+            "start_key" => log_wrappers::Value::key(self.region().get_start_key()),
+            "end_key" => log_wrappers::Value::key(self.region().get_end_key()),
+            "key" => log_wrappers::Value::key(key),
+            "cf" => cf,
+            "value_len" => value.len(),
+        );
+
+
         if let Some(s) = self.buckets.as_mut() {
             s.write_key(key, value.len() as u64);
         }
