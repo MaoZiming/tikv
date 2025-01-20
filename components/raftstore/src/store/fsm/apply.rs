@@ -1755,6 +1755,14 @@ where
         let mut ssts = vec![];
         for req in requests {
             let cmd_type = req.get_cmd_type();
+
+            info!(
+                "Processing Raft command: {:?} for region {} peer {}",
+                cmd_type,
+                self.region_id(),
+                self.id()
+            );
+
             match cmd_type {
                 CmdType::Put => self.handle_put(ctx, req),
                 CmdType::Delete => self.handle_delete(ctx, req),
@@ -1819,6 +1827,17 @@ where
         let (key, value) = (req.get_put().get_key(), req.get_put().get_value());
         // region key range has no data prefix, so we must use origin key to check.
         util::check_key_in_region(key, &self.region)?;
+
+        info!(
+            "handle put";
+            "region_id" => self.region_id(),
+            "peer_id" => self.id,
+            "start_key" => log_wrappers::Value::key(&self.region.get_start_key()),
+            "end_key" => log_wrappers::Value::key(&self.region.get_end_key()),
+            "key" => log_wrappers::Value::key(key),
+            "value_len" => value.len(),
+        );
+
         if let Some(s) = self.buckets.as_mut() {
             s.write_key(key, value.len() as u64);
         }
