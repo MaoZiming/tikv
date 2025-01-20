@@ -1755,6 +1755,15 @@ where
         let mut ssts = vec![];
         for req in requests {
             let cmd_type = req.get_cmd_type();
+
+            // Print the command type
+            info!(
+                "Processing Raft command: {:?} for region {} peer {}",
+                cmd_type,
+                self.region_id(),
+                self.id()
+            );
+
             match cmd_type {
                 CmdType::Put => self.handle_put(ctx, req),
                 CmdType::Delete => self.handle_delete(ctx, req),
@@ -2569,7 +2578,7 @@ where
             .collect();
 
         info!(
-            "split region";
+            "split region (v1)";
             "region_id" => self.region_id(),
             "peer_id" => self.id(),
             "region" => ?derived,
