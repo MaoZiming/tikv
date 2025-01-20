@@ -1831,7 +1831,7 @@ where
         info!(
             "handle put";
             "region_id" => self.region_id(),
-            "peer_id" => self.id,
+            "peer_id" => self.id(),
             "start_key" => log_wrappers::Value::key(&self.region.get_start_key()),
             "end_key" => log_wrappers::Value::key(&self.region.get_end_key()),
             "key" => log_wrappers::Value::key(key),
