@@ -364,8 +364,8 @@ txn_types = { path = "components/txn_types" }
 raft = { version = "0.7.0", default-features = false, features = ["protobuf-codec"] }
 grpcio = { version = "0.10.4", default-features = false, features = ["openssl-vendored", "protobuf-codec", "nightly"] }
 grpcio-health = { version = "0.10.4", default-features = false, features = ["protobuf-codec"] }
-tipb = { git = "https://github.com/pingcap/tipb.git" }
-kvproto = { git = "https://github.com/pingcap/kvproto.git", branch = "release-7.5" }
+tipb = { git = "https://github.com/MaoZiming/tipb.git", branch = "master" }
+kvproto = { git = "https://github.com/MaoZiming/kvproto.git", branch = "master" }
 yatp = { git = "https://github.com/tikv/yatp.git", branch = "master" }
 tokio-timer = { git = "https://github.com/tikv/tokio", branch = "tokio-timer-hotfix" }
 tokio-executor = { git = "https://github.com/tikv/tokio", branch = "tokio-timer-hotfix" }

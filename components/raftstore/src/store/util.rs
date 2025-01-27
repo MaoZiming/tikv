@@ -78,6 +78,14 @@ pub fn check_key_in_region(key: &[u8], region: &metapb::Region) -> Result<()> {
     }
 }
 
+pub fn check_region_guarded(guard: &[u8], region: &metapb::Region) -> Result<()> {
+    if region::check_guard_in_region(guard, region) {
+        Ok(())
+    } else {
+        Err(Error::GuardNotInRegion(guard.to_vec(), region.clone()))
+    }
+}
+
 /// `is_first_vote_msg` checks `msg` is the first vote (or prevote) message or
 /// not. It's used for when the message is received but there is no such region
 /// in `Store::region_peers` and the region overlaps with others. In this case

@@ -23,6 +23,11 @@ pub fn check_key_in_region(key: &[u8], region: &Region) -> bool {
     key >= start_key && (end_key.is_empty() || key < end_key)
 }
 
+/// Check if guard matches region range [`start_key`, `end_key`).
+pub fn check_guard_in_region(guard: &[u8], region: &Region) -> bool {
+    guard == region.get_guard()
+}
+
 /// Check if replicas of two regions are on the same stores.
 pub fn region_on_same_stores(lhs: &Region, rhs: &Region) -> bool {
     if lhs.get_peers().len() != rhs.get_peers().len() {
