@@ -73,6 +73,8 @@ command! {
             /// Assertions is a mechanism to check the constraint on the previous version of data
             /// that must be satisfied as long as data is consistent.
             assertion_level: AssertionLevel,
+
+            guard_value: String,
         }
 }
 
@@ -122,6 +124,7 @@ impl Prewrite {
             None,
             false,
             AssertionLevel::Off,
+            "".to_string(),
             Context::default(),
         )
     }
@@ -145,6 +148,7 @@ impl Prewrite {
             None,
             true,
             AssertionLevel::Off,
+            "".to_string(),
             Context::default(),
         )
     }
@@ -168,6 +172,7 @@ impl Prewrite {
             None,
             false,
             AssertionLevel::Off,
+            "".to_string(),
             Context::default(),
         )
     }
@@ -190,6 +195,7 @@ impl Prewrite {
             None,
             false,
             AssertionLevel::Off,
+            "".to_string(),
             ctx,
         )
     }
@@ -493,6 +499,9 @@ impl<K: PrewriteKind> Prewriter<K> {
         snapshot: impl Snapshot,
         mut context: WriteContext<'_, impl LockManager>,
     ) -> Result<WriteResult> {
+
+        info!("process_write in prewrite.rs");
+        
         // Handle special cases about retried prewrite requests for pessimistic
         // transactions.
         if let TransactionKind::Pessimistic(_) = self.kind.txn_kind() {
@@ -575,6 +584,11 @@ impl<K: PrewriteKind> Prewriter<K> {
         reader: &mut SnapshotReader<impl Snapshot>,
         extra_op: ExtraOp,
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
+
+        info!(
+            "Prewrite in commands!!"
+        );
+
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
             (_, true) => CommitKind::OnePc(self.max_commit_ts),
             (&Some(_), false) => CommitKind::Async(self.max_commit_ts),
@@ -2221,6 +2235,7 @@ mod tests {
                 false,
                 AssertionLevel::Off,
                 vec![],
+                "".to_string(),
                 ctx,
             );
             prewrite_command(engine, cm.clone(), statistics, cmd)

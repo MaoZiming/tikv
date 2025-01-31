@@ -42,6 +42,8 @@ pub fn prewrite<S: Snapshot>(
     pessimistic_action: PrewriteRequestPessimisticAction,
     expected_for_update_ts: Option<TimeStamp>,
 ) -> Result<(TimeStamp, OldValue)> {
+
+    info!("Prewrite in actions");
     let mut mutation =
         PrewriteMutation::from_mutation(mutation, secondary_keys, pessimistic_action, txn_props)?;
 

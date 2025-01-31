@@ -204,6 +204,8 @@ macro_rules! handle_request {
             GRPC_RESOURCE_GROUP_COUNTER_VEC
                     .with_label_values(&[resource_control_ctx.get_resource_group_name(), resource_control_ctx.get_resource_group_name()])
                     .inc();
+
+            info!("Received RPC request: {:?}, Source: {}", req, source);
             let resp = $future_name(&self.storage, req);
             let task = async move {
                 let resp = resp.await?;
