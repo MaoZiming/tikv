@@ -163,6 +163,7 @@ impl From<PrewriteRequest> for TypedCommand<PrewriteResult> {
             None
         };
         if for_update_ts == 0 {
+            println!("Optimistic GuardValue: {:?}", req.get_guard_value());
             Prewrite::new(
                 req.take_mutations().into_iter().map(Into::into).collect(),
                 req.take_primary_lock(),
@@ -185,6 +186,7 @@ impl From<PrewriteRequest> for TypedCommand<PrewriteResult> {
                 .map(Into::into)
                 .zip(pessimistic_actions)
                 .collect();
+            println!("Pessimistic GuardValue: {:?}", req.get_guard_value());
             PrewritePessimistic::new(
                 mutations,
                 req.take_primary_lock(),
