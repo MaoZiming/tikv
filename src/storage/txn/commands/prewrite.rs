@@ -285,6 +285,7 @@ command! {
             assertion_level: AssertionLevel,
             /// Constraints on the pessimistic locks that have to be checked when prewriting.
             for_update_ts_constraints: Vec<PrewriteRequestForUpdateTsConstraint>,
+            guard_value: String,
         }
 }
 
@@ -335,6 +336,7 @@ impl PrewritePessimistic {
             false,
             AssertionLevel::Off,
             vec![],
+            "".to_string(),
             Context::default(),
         )
     }
@@ -360,6 +362,7 @@ impl PrewritePessimistic {
             true,
             AssertionLevel::Off,
             vec![],
+            "".to_string(),
             Context::default(),
         )
     }
@@ -393,6 +396,7 @@ impl PrewritePessimistic {
                     constraint
                 })
                 .collect(),
+            "".to_string(),
             Context::default(),
         )
     }

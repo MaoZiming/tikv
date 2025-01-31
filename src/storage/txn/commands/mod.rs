@@ -200,6 +200,7 @@ impl From<PrewriteRequest> for TypedCommand<PrewriteResult> {
                 req.get_try_one_pc(),
                 req.get_assertion_level(),
                 req.take_for_update_ts_constraints().into(),
+                req.get_guard_value().to_string(),
                 req.take_context(),
             )
         }
