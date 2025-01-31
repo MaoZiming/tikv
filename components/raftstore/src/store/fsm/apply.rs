@@ -1756,7 +1756,10 @@ where
         for req in requests {
             let cmd_type = req.get_cmd_type();
 
+<<<<<<< HEAD
             // Print the command type
+=======
+>>>>>>> 11a73d19b6c2ea42e16cf961afe237f70ea32d25
             info!(
                 "Processing Raft command: {:?} for region {} peer {}",
                 cmd_type,
