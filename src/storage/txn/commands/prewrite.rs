@@ -435,7 +435,7 @@ impl PrewritePessimistic {
             max_commit_ts: self.max_commit_ts,
 
             assertion_level: self.assertion_level,
-            guard_value: "".to_string(),
+            guard_value: self.guard_value,
             ctx: self.ctx,
             old_values: OldValues::default(),
         })
@@ -595,7 +595,7 @@ impl<K: PrewriteKind> Prewriter<K> {
                 "Prewrite aborted: GuardValue mismatch. Expected: \"12345\", Found: {}",
                 self.guard_value
             );
-            // return Err(Error::Other(box_err!("Region not found")));
+            return Err(Error::from(ErrorInner::Other(box_err!("Region not found"))));            // return Err(Error::Other(box_err!("Region not found")));
             // return Err(RaftstoreError::GuardNotInRegion(self.guard_value.clone().into_bytes()))
         }
 
