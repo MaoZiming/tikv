@@ -589,10 +589,10 @@ impl<K: PrewriteKind> Prewriter<K> {
 
         info!("Prewrite in commands!! - GuardValue: {:?}", self.guard_value);
 
-        // Simple check: Abort if `self.guard_value` is not "12345"
-        if self.guard_value != "12345" {
+        // Simple check: Abort if `self.guard_value` is "12345"
+        if self.guard_value == "12345" {
             warn!(
-                "Prewrite aborted: GuardValue mismatch. Expected: \"12345\", Found: {}",
+                "Prewrite aborted: GuardValue is 12345.",
                 self.guard_value
             );
             return Err(Error::from(ErrorInner::Other(box_err!("Region not found"))));            // return Err(Error::Other(box_err!("Region not found")));
