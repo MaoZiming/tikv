@@ -591,12 +591,8 @@ impl<K: PrewriteKind> Prewriter<K> {
 
         // Simple check: Abort if `self.guard_value` is "12345"
         if self.guard_value == "12345" {
-            warn!(
-                "Prewrite aborted: GuardValue is 12345.",
-                self.guard_value
-            );
+            warn!("Prewrite aborted: GuardValue is 12345.");
             return Err(Error::from(ErrorInner::Other(box_err!("Region not found"))));            // return Err(Error::Other(box_err!("Region not found")));
-            // return Err(RaftstoreError::GuardNotInRegion(self.guard_value.clone().into_bytes()))
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
