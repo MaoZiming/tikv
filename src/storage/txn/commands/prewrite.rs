@@ -217,7 +217,7 @@ impl Prewrite {
             secondary_keys: self.secondary_keys,
 
             assertion_level: self.assertion_level,
-
+            guard_value: self.guard_value,
             ctx: self.ctx,
             old_values: OldValues::default(),
         }
@@ -253,6 +253,8 @@ impl CommandExt for Prewrite {
 
 impl<S: Snapshot, L: LockManager> WriteCommand<S, L> for Prewrite {
     fn process_write(self, snapshot: S, context: WriteContext<'_, L>) -> Result<WriteResult> {
+
+        info!("Prewrite Command Processing - GuardValue: {:?}", self.guard_value);
         self.into_prewriter().process_write(snapshot, context)
     }
 }
@@ -433,7 +435,7 @@ impl PrewritePessimistic {
             max_commit_ts: self.max_commit_ts,
 
             assertion_level: self.assertion_level,
-
+            guard_value: "".to_string(),
             ctx: self.ctx,
             old_values: OldValues::default(),
         })
@@ -488,7 +490,7 @@ struct Prewriter<K: PrewriteKind> {
     old_values: OldValues,
     try_one_pc: bool,
     assertion_level: AssertionLevel,
-
+    guard_value: String,
     ctx: Context,
 }
 
@@ -500,8 +502,8 @@ impl<K: PrewriteKind> Prewriter<K> {
         mut context: WriteContext<'_, impl LockManager>,
     ) -> Result<WriteResult> {
 
-        info!("process_write in prewrite.rs");
-        
+        info!("process_write in prewrite.rs - GuardValue: {:?}", self.guard_value);
+
         // Handle special cases about retried prewrite requests for pessimistic
         // transactions.
         if let TransactionKind::Pessimistic(_) = self.kind.txn_kind() {
@@ -585,9 +587,17 @@ impl<K: PrewriteKind> Prewriter<K> {
         extra_op: ExtraOp,
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
 
-        info!(
-            "Prewrite in commands!!"
-        );
+        info!("Prewrite in commands!! - GuardValue: {:?}", self.guard_value);
+
+        // Simple check: Abort if `self.guard_value` is not "12345"
+        if self.guard_value != "12345" {
+            warn!(
+                "Prewrite aborted: GuardValue mismatch. Expected: \"12345\", Found: {}",
+                self.guard_value
+            );
+            // return Err(Error::Other(box_err!("Region not found")));
+            // return Err(RaftstoreError::GuardNotInRegion(self.guard_value.clone().into_bytes()))
+        }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
             (_, true) => CommitKind::OnePc(self.max_commit_ts),

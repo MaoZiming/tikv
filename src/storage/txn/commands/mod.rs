@@ -157,8 +157,14 @@ impl<T> From<TypedCommand<T>> for Command {
 impl From<PrewriteRequest> for TypedCommand<PrewriteResult> {
     fn from(mut req: PrewriteRequest) -> Self {
 
+        info!("PrewriteRequest.guard_value: {}", req.guard_value);
         info!("Received PrewriteRequest: {:?}", req);
-
+        info!("PrewriteRequest.guard_value: {:?}", req.get_guard_value());
+        info!("PrewriteRequest.for_update_ts: {}", req.get_for_update_ts());
+        info!("PrewriteRequest.max_commit_ts: {}", req.get_max_commit_ts());
+        info!("PrewriteRequest.assertion_level: {:?}", req.get_assertion_level());
+        info!("PrewriteRequest.for_update_ts_constraints: {:?}", req.for_update_ts_constraints);
+        
         let for_update_ts = req.get_for_update_ts();
         let secondary_keys = if req.get_use_async_commit() {
             Some(req.get_secondaries().into())
