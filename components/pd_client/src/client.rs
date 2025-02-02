@@ -682,6 +682,13 @@ impl PdClient for RpcClient {
 
         let mut req = pdpb::RegionHeartbeatRequest::default();
         let guard_value = region.guard_value.clone();
+
+        info!(
+            "Sending Region Heartbeat: region_id={}, guard_value={}",
+            region.get_id(),
+            guard_value
+        );
+
         req.set_term(term);
         req.set_header(self.header());
         req.set_region(region);

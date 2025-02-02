@@ -20,6 +20,7 @@ pub fn initial_region(store_id: u64, region_id: u64, peer_id: u64) -> metapb::Re
     region.mut_region_epoch().set_version(INIT_EPOCH_VER);
     region.mut_region_epoch().set_conf_ver(INIT_EPOCH_CONF_VER);
     region.mut_peers().push(new_peer(store_id, peer_id));
+    region.set_guard_value("default_guard".to_string());
     region
 }
 

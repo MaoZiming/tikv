@@ -5372,6 +5372,15 @@ where
             replication_status: self.region_replication_status(ctx),
             wait_data_peers: self.wait_data_peers.clone(),
         });
+
+        let region_id = self.region().get_id();
+        let guard_value = self.region().guard_value.clone(); // Ensure guard_value exists
+        
+        info!(
+            "heartbeat_pd Task Created: region_id={}, guard_value={}",
+            region_id, guard_value
+        );
+
         if let Err(e) = ctx.pd_scheduler.schedule(task) {
             error!(
                 "failed to notify pd";

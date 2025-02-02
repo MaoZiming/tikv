@@ -1180,6 +1180,7 @@ where
                         resp.take_ids().into(),
                         right_derive,
                         share_source_region_size,
+                        region.get_guard_value().to_string(),
                     );
                     let region_id = region.get_id();
                     let epoch = region.take_region_epoch();
@@ -2451,6 +2452,7 @@ fn new_batch_split_region_request(
     ids: Vec<pdpb::SplitId>,
     right_derive: bool,
     share_source_region_size: bool,
+    guard_value: String,
 ) -> AdminRequest {
     let mut req = AdminRequest::default();
     req.set_cmd_type(AdminCmdType::BatchSplit);
@@ -2463,6 +2465,7 @@ fn new_batch_split_region_request(
         split.set_split_key(key);
         split.set_new_region_id(id.get_new_region_id());
         split.set_new_peer_ids(id.take_new_peer_ids());
+        split.set_guard_value(guard_value.clone());
         requests.push(split);
     }
     req.mut_splits().set_requests(requests.into());

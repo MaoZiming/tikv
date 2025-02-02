@@ -2615,6 +2615,7 @@ where
             new_region.set_start_key(keys.pop_front().unwrap());
             new_region.set_end_key(keys.front().unwrap().to_vec());
             new_region.set_peers(derived.get_peers().to_vec().into());
+            new_region.set_guard_value(req.get_guard_value().to_string());
             for (peer, peer_id) in new_region
                 .mut_peers()
                 .iter_mut()
