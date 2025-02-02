@@ -592,7 +592,14 @@ impl<K: PrewriteKind> Prewriter<K> {
         // Simple check: Abort if `self.guard_value` is "12345"
         if self.guard_value == "12345" {
             warn!("Prewrite aborted: GuardValue is 12345.");
-            return Err(Error::from(ErrorInner::Other(box_err!("Region not found"))));            // return Err(Error::Other(box_err!("Region not found")));
+            return Err(Error::from(ErrorInner::Other(box_err!(
+                "Delayed Writes! Prewrite Keys in Region {}",
+                self.ctx.get_region_id()
+            ))));
+        } else {
+            info!(
+                "Prewrite Keys in Region {}", self.ctx.get_region_id();
+            );
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {

@@ -24,8 +24,8 @@ pub fn check_key_in_region(key: &[u8], region: &Region) -> bool {
 }
 
 /// Check if guard matches region range [`start_key`, `end_key`).
-pub fn check_guard_in_region(guard: &[u8], region: &Region) -> bool {
-    guard == region.get_guard()
+pub fn check_guard_in_region(guard: String, region: &Region) -> bool {
+    guard == region.get_guard_value()
 }
 
 /// Check if replicas of two regions are on the same stores.

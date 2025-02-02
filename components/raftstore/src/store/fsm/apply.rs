@@ -1824,10 +1824,9 @@ where
 {
     fn handle_put(&mut self, ctx: &mut ApplyContext<EK>, req: &Request) -> Result<()> {
         PEER_WRITE_CMD_COUNTER.put.inc();
-        let (key, value, guard) = (req.get_put().get_key(), req.get_put().get_value(), req.get_put().get_guard());
+        let (key, value) = (req.get_put().get_key(), req.get_put().get_value());
         // region key range has no data prefix, so we must use origin key to check.
         util::check_key_in_region(key, &self.region)?;
-        util::check_region_guarded(guard, &self.region)?;
 
         info!(
             "raftstore-v1 handle_put";

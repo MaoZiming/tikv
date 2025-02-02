@@ -879,6 +879,7 @@ where
     }
 
     pub fn get_region_id(&self) -> u64 {
+        info!("get_region_id from peer_storage.rs");
         self.region().get_id()
     }
 
