@@ -199,6 +199,12 @@ impl<RE> RocksEngine<RE> {
             .pre_propose(&region, &mut cmd_req)
             .map_err(|err| Error::from(ErrorInner::Other(box_err!(err))))?;
 
+        info!(
+            "Initialized Region: region_id={}, guard_value={}",
+            region.get_id(),
+            region.guard_value.clone()
+        );
+
         batch.modifies = cmd_req
             .take_requests()
             .into_iter()

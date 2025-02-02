@@ -304,9 +304,10 @@ where
         peer_id: u64,
         tag: String,
     ) -> Result<PeerStorage<EK, ER>> {
-        debug!(
+        info!(
             "creating storage on specified path";
             "region_id" => region.get_id(),
+            "guard" => region.guard_value.clone(),
             "peer_id" => peer_id,
             "path" => ?engines.kv.path(),
         );

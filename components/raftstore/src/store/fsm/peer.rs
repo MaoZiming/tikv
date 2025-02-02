@@ -269,6 +269,7 @@ where
         info!(
             "create peer";
             "region_id" => region.get_id(),
+            "region guard" => region.guard_value.clone(),
             "peer_id" => meta_peer.get_id(),
         );
         HIBERNATED_PEER_STATE_GAUGE.awaken.inc();
@@ -330,6 +331,12 @@ where
 
         let mut region = metapb::Region::default();
         region.set_id(region_id);
+
+        info!(
+            "Initialized Region: region_id={}, guard_value={}",
+            region.get_id(),
+            region.guard_value.clone()
+        );
 
         HIBERNATED_PEER_STATE_GAUGE.awaken.inc();
         let (tx, rx) = mpsc::loose_bounded(cfg.notify_capacity);

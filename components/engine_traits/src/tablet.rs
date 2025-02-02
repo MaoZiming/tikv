@@ -9,6 +9,8 @@ use std::{
     },
 };
 
+use tikv_util::info;
+
 use collections::HashMap;
 use kvproto::metapb::Region;
 use tikv_util::box_err;
@@ -132,6 +134,13 @@ impl TabletContext {
     pub fn with_infinite_region(id: u64, suffix: Option<u64>) -> Self {
         let mut region = Region::default();
         region.set_id(id);
+
+        info!(
+            "Initialized Region: region_id={}, guard_value={}",
+            region.get_id(),
+            region.guard_value.clone()
+        );
+
         Self::new(&region, suffix)
     }
 }

@@ -2616,6 +2616,13 @@ where
             new_region.set_end_key(keys.front().unwrap().to_vec());
             new_region.set_peers(derived.get_peers().to_vec().into());
             new_region.set_guard_value(req.get_guard_value().to_string());
+
+            info!(
+                "Initialized Region: region_id={}, guard_value={}",
+                new_region.get_id(),
+                new_region.guard_value.clone()
+            );
+
             for (peer, peer_id) in new_region
                 .mut_peers()
                 .iter_mut()
