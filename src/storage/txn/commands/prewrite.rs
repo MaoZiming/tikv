@@ -18,7 +18,7 @@ use txn_types::{
     insert_old_value_if_resolved, Key, Mutation, OldValue, OldValues, TimeStamp, TxnExtra, Write,
     WriteType,
 };
-
+use tikv_util::store::region::get_region_guard;
 use super::ReaderWithStats;
 use crate::storage::{
     kv::WriteData,
@@ -588,6 +588,16 @@ impl<K: PrewriteKind> Prewriter<K> {
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
 
         info!("Prewrite in commands!! - GuardValue: {:?}", self.guard_value);
+
+        // Call `query_region`
+        if let Some(guard_value) = get_region_guard(self.ctx.get_region_id()) {
+            println!("Region guard: {:?}", guard_value);
+            
+            // Use the region metadata as needed in your prewrite logic
+        } else {
+            println!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
+        }
+
 
         // Simple check: Abort if `self.guard_value` is "12345"
         if self.guard_value == "12345" {
@@ -2411,6 +2421,8 @@ mod tests {
             Some(vec![]),
             false,
             AssertionLevel::Off,
+            "default_guard".to_string(),
+            
             Context::default(),
         );
         let context = WriteContext {

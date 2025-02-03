@@ -691,6 +691,7 @@ where
         info!(
             "apply snapshot with state ok";
             "region_id" => self.region.get_id(),
+            "guard_value" => self.region.guard_value.clone(),
             "peer_id" => self.peer_id,
             "region" => ?region,
             "state" => ?self.apply_state(),
@@ -882,6 +883,11 @@ where
     pub fn get_region_id(&self) -> u64 {
         info!("get_region_id from peer_storage.rs");
         self.region().get_id()
+    }
+
+    pub fn get_guard_value(&self) -> String {
+        info!("get_guard_value from peer_storage.rs");
+        self.region().get_guard_value().to_string()
     }
 
     pub fn schedule_applying_snapshot(&mut self) {

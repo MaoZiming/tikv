@@ -1,6 +1,39 @@
 // Copyright 2022 TiKV Project Authors. Licensed under Apache-2.0.
 
 use kvproto::metapb::Region;
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
+
+// Define a globally accessible Region map
+static REGION_TO_GUARD_MAP: Lazy<DashMap<u64, String>> = Lazy::new(DashMap::new);
+
+/// Function to update the map
+pub fn update_region_guard(region_id: u64, guard_value: String) {
+    info!(
+        "Updating REGION_TO_GUARD_MAP: region_id={}, guard_value={}",
+        region_id, guard_value
+    );
+
+    REGION_TO_GUARD_MAP.insert(region_id, guard_value);
+}
+
+/// Function to retrieve a region
+pub fn get_region_guard(region_id: u64) -> Option<String> {
+    match REGION_TO_GUARD_MAP.get(&region_id) {
+        Some(guard_value) => {
+            let value_str = guard_value.as_str(); // Convert Ref<String> to &str
+            info!(
+                "Retrieving from REGION_TO_GUARD_MAP: region_id={}, guard_value={:?}",
+                region_id, value_str
+            );
+            Some(guard_value.clone())
+        }
+        None => {
+            warn!("Region {} not found in REGION_TO_GUARD_MAP", region_id);
+            None
+        }
+    }
+}
 
 /// Check if key in region range (`start_key`, `end_key`).
 pub fn check_key_in_region_exclusive(key: &[u8], region: &Region) -> bool {

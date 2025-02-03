@@ -71,6 +71,7 @@ use tikv_util::{
 use time::Timespec;
 use tracker::GLOBAL_TRACKERS;
 use uuid::Builder as UuidBuilder;
+use tikv_util::store::region::update_region_guard;
 
 use self::memtrace::*;
 use super::metrics::*;
@@ -3971,6 +3972,7 @@ where
             "term" => reg.term
         );
         assert_eq!(self.delegate.id(), reg.id);
+        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         self.delegate.term = reg.term;
         self.delegate.clear_all_commands_as_stale();
         self.delegate = ApplyDelegate::from_registration(reg);
