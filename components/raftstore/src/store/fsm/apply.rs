@@ -3946,11 +3946,16 @@ where
         peer: &Peer<EK, ER>,
     ) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let reg = Registration::new(peer);
+
+        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        info!("from peer");
         ApplyFsm::from_registration(reg)
     }
 
     fn from_registration(reg: Registration) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let (tx, rx) = loose_bounded(usize::MAX);
+        info!("from registration");
+        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         let delegate = ApplyDelegate::from_registration(reg);
         (
             tx,

@@ -591,25 +591,34 @@ impl<K: PrewriteKind> Prewriter<K> {
 
         // Call `query_region`
         if let Some(guard_value) = get_region_guard(self.ctx.get_region_id()) {
-            println!("Region guard: {:?}", guard_value);
-            
+            info!("Region guard: {:?}", guard_value);
+            info!("self.guard_value: {:?}", self.guard_value);
+
+            if !self.guard_value.is_empty()
+            && self.guard_value != "default-prewrite"
+            && self.guard_value != guard_value
+            {
+                warn!(
+                    "Prewrite aborted: GuardValue mismatch for Region {}. Expected: {}, Found: {}",
+                    self.ctx.get_region_id(),
+                    self.guard_value,
+                    guard_value
+                );
+
+                return Err(Error::from(ErrorInner::Other(box_err!(
+                    "Delayed Writes! GuardValue mismatch for Region {}. Expected: {}, Found: {}",
+                    self.ctx.get_region_id(),
+                    self.guard_value,
+                    guard_value
+                ))));
+            } else {
+                info!(
+                    "Prewrite Keys in Region {}", self.ctx.get_region_id();
+                );
+            }
             // Use the region metadata as needed in your prewrite logic
         } else {
             println!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
-        }
-
-
-        // Simple check: Abort if `self.guard_value` is "12345"
-        if self.guard_value == "12345" {
-            warn!("Prewrite aborted: GuardValue is 12345.");
-            return Err(Error::from(ErrorInner::Other(box_err!(
-                "Delayed Writes! Prewrite Keys in Region {}",
-                self.ctx.get_region_id()
-            ))));
-        } else {
-            info!(
-                "Prewrite Keys in Region {}", self.ctx.get_region_id();
-            );
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
