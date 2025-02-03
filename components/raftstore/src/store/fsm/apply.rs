@@ -1054,6 +1054,7 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
+        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -3946,16 +3947,13 @@ where
         peer: &Peer<EK, ER>,
     ) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let reg = Registration::new(peer);
-
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
-        info!("from peer");
+        info!("From peer");
         ApplyFsm::from_registration(reg)
     }
 
     fn from_registration(reg: Registration) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let (tx, rx) = loose_bounded(usize::MAX);
-        info!("from registration");
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        info!("From registration");
         let delegate = ApplyDelegate::from_registration(reg);
         (
             tx,
@@ -3977,7 +3975,6 @@ where
             "term" => reg.term
         );
         assert_eq!(self.delegate.id(), reg.id);
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         self.delegate.term = reg.term;
         self.delegate.clear_all_commands_as_stale();
         self.delegate = ApplyDelegate::from_registration(reg);
