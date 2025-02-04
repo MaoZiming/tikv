@@ -58,7 +58,7 @@ use crate::{
         SecondaryLocksStatus, Storage, TxnStatus,
     },
 };
-
+use tikv_util::store::region::update_region_guard;
 const GRPC_MSG_MAX_BATCH_SIZE: usize = 128;
 const GRPC_MSG_NOTIFY_SIZE: usize = 8;
 
@@ -1357,6 +1357,20 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         RequestType::KvGet,
         req.get_version(),
     )));
+
+    let guard_value = req.get_guard_value();
+    info!(
+        "future_get: key: {:?}, guard_value: {:?}, range_id: {:?}",
+        Key::from_raw(req.get_key()),
+        guard_value,
+        req.get_context().get_region_id()
+    );
+    if !guard_value.is_empty() {
+        update_region_guard(
+            req.get_context().get_region_id(),
+            guard_value.to_string());
+    }
+
     set_tls_tracker_token(tracker);
     let start = Instant::now();
     let v = storage.get(
