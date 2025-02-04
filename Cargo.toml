@@ -365,7 +365,7 @@ raft = { version = "0.7.0", default-features = false, features = ["protobuf-code
 grpcio = { version = "0.10.4", default-features = false, features = ["openssl-vendored", "protobuf-codec", "nightly"] }
 grpcio-health = { version = "0.10.4", default-features = false, features = ["protobuf-codec"] }
 tipb = { git = "https://github.com/MaoZiming/tipb.git", branch = "master" }
-kvproto = { git = "https://github.com/MaoZiming/kvproto.git", rev = "32c030629369e17035115ed162bc0ce1a11a6991" }
+kvproto = { git = "https://github.com/MaoZiming/kvproto.git", rev = "0248babf0db299b05c57901baa005a62f14db779" }
 yatp = { git = "https://github.com/tikv/yatp.git", branch = "master" }
 tokio-timer = { git = "https://github.com/tikv/tokio", branch = "tokio-timer-hotfix" }
 tokio-executor = { git = "https://github.com/tikv/tokio", branch = "tokio-timer-hotfix" }
