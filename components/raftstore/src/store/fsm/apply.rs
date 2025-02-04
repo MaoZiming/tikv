@@ -2625,6 +2625,8 @@ where
                 new_region.guard_value.clone()
             );
 
+            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
+
             for (peer, peer_id) in new_region
                 .mut_peers()
                 .iter_mut()

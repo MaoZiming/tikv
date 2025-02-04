@@ -5,7 +5,7 @@ use kvproto::{
     metapb,
     raft_serverpb::{RaftLocalState, RegionLocalState, StoreIdent},
 };
-use tikv_util::{box_err, box_try, store::new_peer, info};
+use tikv_util::{box_err, box_try, info, store::{new_peer, region::update_region_guard}};
 
 use super::peer_storage::{
     write_initial_apply_state, write_initial_raft_state, INIT_EPOCH_CONF_VER, INIT_EPOCH_VER,
@@ -27,6 +27,8 @@ pub fn initial_region(store_id: u64, region_id: u64, peer_id: u64) -> metapb::Re
         region.get_id(),
         region.guard_value.clone()
     );
+
+    update_region_guard(region_id, region.guard_value.clone());
 
     region
 }

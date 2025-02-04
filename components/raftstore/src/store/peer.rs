@@ -13,7 +13,7 @@ use std::{
     time::{Duration, Instant},
     u64, usize,
 };
-
+use tikv_util::store::region::get_region_guard;
 use bitflags::bitflags;
 use bytes::Bytes;
 use collections::{HashMap, HashSet};
@@ -5374,8 +5374,14 @@ where
         });
 
         let region_id = self.region().get_id();
-        let guard_value = self.region().guard_value.clone(); // Ensure guard_value exists
+        let mut guard_value = self.region().guard_value.clone(); // Ensure guard_value exists
         
+
+        if let Some(guard_value_from_store) = get_region_guard(region_id) {
+            guard_value = guard_value_from_store;
+        }
+        
+
         info!(
             "heartbeat_pd Task Created: region_id={}, guard_value={}",
             region_id, guard_value

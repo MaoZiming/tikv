@@ -19,6 +19,7 @@ use futures::{
     stream::{ErrInto, StreamExt},
     TryStreamExt,
 };
+use tikv_util::store::region::get_region_guard;
 use grpcio::{EnvBuilder, Environment, WriteFlags};
 use kvproto::{
     meta_storagepb::{
@@ -681,7 +682,11 @@ impl PdClient for RpcClient {
         PD_HEARTBEAT_COUNTER_VEC.with_label_values(&["send"]).inc();
 
         let mut req = pdpb::RegionHeartbeatRequest::default();
-        let guard_value = region.guard_value.clone();
+        let mut guard_value = region.guard_value.clone();
+
+        if let Some(guard_value_from_store) = get_region_guard(region.get_id()) {
+            guard_value = guard_value_from_store;
+        }
 
         info!(
             "Sending Region Heartbeat: region_id={}, guard_value={}",
