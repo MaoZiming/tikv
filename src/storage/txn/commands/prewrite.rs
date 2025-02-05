@@ -587,8 +587,8 @@ impl<K: PrewriteKind> Prewriter<K> {
         extra_op: ExtraOp,
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
 
-        info!("Prewrite in commands!! - GuardValue: {:?}", self.guard_value);
         let key = &self.primary;
+        info!("Prewrite in commands!! - GuardValue: {:?}, key: {:?}", self.guard_value, key);
         // Call `query_region`
         if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), key) {
             info!("Region guard: {:?}", guard_value);

@@ -6835,6 +6835,7 @@ dependencies = [
  "futures-util",
  "gag",
  "grpcio",
+ "hex 0.4.2",
  "http",
  "kvproto",
  "lazy_static",

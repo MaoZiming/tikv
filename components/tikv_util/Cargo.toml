@@ -9,6 +9,7 @@ failpoints = ["fail/failpoints"]
 test-cgroup = []
 
 [dependencies]
+hex = "0.4"
 once_cell = "1.18"
 dashmap = "5"
 async-speed-limit = "0.4.0"
