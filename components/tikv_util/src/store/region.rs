@@ -25,12 +25,14 @@ pub fn print_region_guard_map() {
 
         info!("Region ID: {}", region_id);
         for guard in guards.iter() {
-            info!(
-                "  - Guard: start_key={}, end_key={}, guard_value={}",
-                hex::encode(&guard.start_key),
-                hex::encode(&guard.end_key),
-                guard.guard_value
-            );
+            if guard.guard_value != "default_guard" {
+                info!(
+                    "  - Guard: start_key={}, end_key={}, guard_value={}",
+                    hex::encode(&guard.start_key),
+                    hex::encode(&guard.end_key),
+                    guard.guard_value
+                );
+            }
         }
     }
 }
@@ -89,6 +91,14 @@ fn ranges_overlap(a: &RangeGuard, b: &RangeGuard) -> bool {
     if !a_has_infinite_end && b.start_key >= a.end_key {
         return false;
     }
+
+    info!(
+        "DROP overlap guard: start_key={}, end_key={}, guard_value={}",
+        hex::encode(&a.start_key),
+        hex::encode(&a.end_key),
+        a.guard_value
+    );
+
     true
 }
 
@@ -263,7 +273,7 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
         region_id,
         hex::encode(key)
     );
-    None
+    return Some("NoExistingGuard".to_string());
 }
 
 /// Concatenates all guard values for a given `region_id` into a single comma-separated string.

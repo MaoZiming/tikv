@@ -618,7 +618,7 @@ impl<K: PrewriteKind> Prewriter<K> {
             }
             // Use the region metadata as needed in your prewrite logic
         } else {
-            println!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
+            info!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
