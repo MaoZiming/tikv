@@ -596,7 +596,7 @@ impl<K: PrewriteKind> Prewriter<K> {
 
             if !self.guard_value.is_empty()
             && self.guard_value != "default-prewrite"
-            && self.guard_value != guard_value
+            && !guard_value.split(',').any(|g| g == self.guard_value)
             {
                 warn!(
                     "Prewrite aborted: GuardValue mismatch for Region {}. Expected: {}, Found: {}",

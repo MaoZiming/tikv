@@ -73,6 +73,37 @@ pub fn update_region_guard(region_id: u64, guard_value: String) {
     print_region_guard_map();
 }
 
+/// Returns true if the two RangeGuards [start, end) overlap.
+/// An empty `end_key` is considered "infinite".
+fn ranges_overlap(a: &RangeGuard, b: &RangeGuard) -> bool {
+    let a_has_infinite_end = a.end_key.is_empty();
+    let b_has_infinite_end = b.end_key.is_empty();
+
+    // Overlap condition (1D interval logic):
+    //  (a_start < b_end || b_end is infinite) AND
+    //  (b_start < a_end || a_end is infinite)
+
+    if !b_has_infinite_end && a.start_key >= b.end_key {
+        return false;
+    }
+    if !a_has_infinite_end && b.start_key >= a.end_key {
+        return false;
+    }
+    true
+}
+
+/// Removes any RangeGuards in `rg_vec` that overlap with the newly updated guard at `main_idx`.
+fn remove_overlaps(rg_vec: &mut Vec<RangeGuard>, main_idx: usize) {
+    // 1. Remove the newly updated guard from rg_vec.
+    //    This avoids accidentally removing it in the retain() step.
+    let updated_guard = rg_vec.remove(main_idx);
+
+    // 2. Retain only those RangeGuards that do NOT overlap.
+    rg_vec.retain(|g| !ranges_overlap(&updated_guard, g));
+
+    // 3. Re-insert the updated guard.
+    rg_vec.push(updated_guard);
+}
 
 /// Updates the region with a partial range guard based on `guard_value` prefix.
 /// - If guard_value starts with "START_", sets a new or existing start_key.
@@ -93,16 +124,19 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
             .entry(region_id)
             .and_modify(|rg_vec| {
                 // Find an existing guard with same guard_value
-                if let Some(existing_guard) = rg_vec.iter_mut().find(|rg| rg.guard_value == stripped_value) {
-                    existing_guard.start_key = key.clone();
+                
+                if let Some(idx) = rg_vec.iter().position(|rg| rg.guard_value == stripped_value) {
+                    // Now we have the index of the existing guard
+                    rg_vec[idx].start_key = key.clone();
                     info!(
                         "Reused existing START RangeGuard: region_id={}, guard_value={}, \
                          new start_key={}, end_key={}",
                         region_id,
                         stripped_value,
                         hex::encode(&key),
-                        hex::encode(&existing_guard.end_key),
+                        hex::encode(&rg_vec[idx].end_key),
                     );
+                    remove_overlaps(rg_vec, idx);
                 } else {
                     // No guard with the same guard_value found; create a new one
                     rg_vec.push(RangeGuard {
@@ -110,12 +144,15 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         end_key: Vec::new(),
                         guard_value: stripped_value.to_owned(),
                     });
+                    // The new RangeGuard is always pushed to the last
+                    let idx_new = rg_vec.len() - 1;
                     info!(
                         "Added START RangeGuard: region_id={}, guard_value={}, start_key={}",
                         region_id,
                         stripped_value,
                         hex::encode(&key)
                     );
+                    remove_overlaps(rg_vec, idx_new);
                 }
             })
             .or_insert_with(|| {
@@ -131,15 +168,18 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
             .entry(region_id)
             .and_modify(|rg_vec| {
                 // Search from the end to find the last matching guard_value
-                if let Some(existing_guard) = rg_vec.iter_mut().rev().find(|rg| rg.guard_value == stripped_value) {
-                    existing_guard.end_key = key.clone();
+                if let Some(idx) = rg_vec.iter().position(|rg| rg.guard_value == stripped_value) {
+                    // Now we have the index of the existing guard
+                    rg_vec[idx].end_key = key.clone();
+
                     info!(
                         "Matched END RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
                         region_id,
                         stripped_value,
-                        hex::encode(&existing_guard.start_key),
+                        hex::encode(&rg_vec[idx].start_key),
                         hex::encode(&key),
                     );
+                    remove_overlaps(rg_vec, idx);
                 } else {
                     warn!(
                         "No existing RangeGuard found for region_id={} matching guard_value='{}' \
@@ -191,13 +231,15 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
     };
 
     // The "original logic": find the first range in which key fits
+    let mut matched_guards = Vec::new();
+
     for range_guard in rg_vec.iter() {
         let start_empty = range_guard.start_key.is_empty();
         let end_empty = range_guard.end_key.is_empty();
-
+    
         let in_range_start = start_empty || key >= range_guard.start_key.as_slice();
         let in_range_end = end_empty || key <= range_guard.end_key.as_slice();
-
+    
         if in_range_start && in_range_end {
             info!(
                 "Key {} is in range [{}, {}] for region_id={}, guard_value={}",
@@ -207,8 +249,13 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
                 region_id,
                 range_guard.guard_value
             );
-            return Some(range_guard.guard_value.clone());
+            matched_guards.push(range_guard.guard_value.clone());
         }
+    }
+    
+    // Join matched guard values into a comma-separated string
+    if !matched_guards.is_empty() {
+        return Some(matched_guards.join(","));
     }
 
     warn!(
