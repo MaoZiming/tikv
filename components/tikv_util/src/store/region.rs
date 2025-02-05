@@ -213,6 +213,22 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         region_id,
                         stripped_value
                     );
+                    rg_vec.push(RangeGuard {
+                        start_key: Vec::new(),
+                        end_key: key.clone(),
+                        guard_value: stripped_value.to_owned(),
+                    });
+                    // The new RangeGuard is always pushed to the last
+                    let idx_new = rg_vec.len() - 1;
+                    info!(
+                        "Added END RangeGuard: region_id={}, guard_value={}, end_key={}",
+                        region_id,
+                        stripped_value,
+                        hex::encode_upper(&key)
+                    );
+                    if remove_overlap {
+                        remove_overlaps(rg_vec, idx_new);
+                    }
                 }
             })
             // If the region didn't exist at all, we insert a new guard
