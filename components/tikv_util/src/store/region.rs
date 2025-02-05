@@ -23,9 +23,13 @@ pub fn print_region_guard_map() {
         let region_id = entry.key();
         let guards = entry.value();
 
-        info!("Region ID: {}", region_id);
+        let mut printed = false;
         for guard in guards.iter() {
             if guard.guard_value != "default_guard" {
+                if !printed {
+                    info!("Region ID: {}", region_id);
+                    printed = true;
+                }
                 info!(
                     "  - Guard: start_key={}, end_key={}, guard_value={}",
                     hex::encode(&guard.start_key),
@@ -128,8 +132,16 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
         hex::encode(&key)
     );
 
-    if let Some(stripped_value) = guard_value.strip_prefix("START_") {
+    let mut remove_overlap = true;
+    if let Some(mut stripped_value) = guard_value.strip_prefix("START_") {
         // Modify existing range or insert a new vector if none
+        
+        // If START_1234_END; this means 
+        if let Some(new_value) = stripped_value.strip_suffix("_END") {
+            stripped_value = new_value;
+            remove_overlap = false;
+        }
+        
         REGION_TO_GUARD_MAP
             .entry(region_id)
             .and_modify(|rg_vec| {
@@ -146,7 +158,9 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         hex::encode(&key),
                         hex::encode(&rg_vec[idx].end_key),
                     );
-                    remove_overlaps(rg_vec, idx);
+                    if remove_overlap {
+                        remove_overlaps(rg_vec, idx);
+                    }
                 } else {
                     // No guard with the same guard_value found; create a new one
                     rg_vec.push(RangeGuard {
@@ -162,7 +176,9 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         stripped_value,
                         hex::encode(&key)
                     );
-                    remove_overlaps(rg_vec, idx_new);
+                    if remove_overlap {
+                        remove_overlaps(rg_vec, idx_new);
+                    }
                 }
             })
             .or_insert_with(|| {
@@ -286,9 +302,13 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
             let all_guards = range_guards
                 .iter()
                 .map(|rg| {
-                    let start_key_hex = hex::encode(&rg.start_key);
+                    let start_key_hex = if rg.start_key.is_empty() {
+                        ":".to_string()
+                    } else {
+                        hex::encode(&rg.start_key)
+                    };
                     let end_key_hex = if rg.end_key.is_empty() {
-                        "END".to_string()
+                        ":".to_string()
                     } else {
                         hex::encode(&rg.end_key)
                     };

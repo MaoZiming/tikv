@@ -12,6 +12,7 @@ testexport = []
 collections = { workspace = true }
 error_code = { workspace = true }
 fail = "0.5"
+hex = "0.4"
 futures = "0.3"
 grpcio = { workspace = true }
 kvproto = { workspace = true }

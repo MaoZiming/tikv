@@ -9,6 +9,7 @@ use std::{
     time::Duration,
     u64,
 };
+use hex;
 
 use futures::{
     channel::mpsc,
@@ -689,9 +690,11 @@ impl PdClient for RpcClient {
         }
 
         info!(
-            "Sending Region Heartbeat: region_id={}, guard_value={}",
+            "Sending Region Heartbeat: region_id={}, guard_value={}, region: {}:{}",
             region.get_id(),
-            guard_value
+            guard_value,
+            hex::encode_upper(region.get_start_key()),
+            hex::encode_upper(region.get_end_key()),
         );
 
         req.set_term(term);
