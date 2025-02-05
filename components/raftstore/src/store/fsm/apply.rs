@@ -2617,7 +2617,12 @@ where
             new_region.set_start_key(keys.pop_front().unwrap());
             new_region.set_end_key(keys.front().unwrap().to_vec());
             new_region.set_peers(derived.get_peers().to_vec().into());
-            new_region.set_guard_value(req.get_guard_value().to_string());
+
+            // SPLIT: drop guard on all split region..
+            new_region.set_guard_value("default_guard".to_string());
+            self.region.set_guard_value("default_guard".to_string());
+            update_region_guard(new_region.get_id(), "default_guard".to_string());
+            update_region_guard(self.region.get_id(), "default_guard".to_string());
 
             info!(
                 "Initialized Region: region_id={}, guard_value={}",
@@ -2874,6 +2879,11 @@ where
         let merge = req.get_commit_merge();
         let source_region = merge.get_source();
         let source_region_id = source_region.get_id();
+
+        // DROP ALL GUARD during region merge.
+        self.region.set_guard_value("default_guard".to_string());
+        update_region_guard(source_region_id, "default_guard".to_string());
+        update_region_guard(self.region.get_id(), "default_guard".to_string());
 
         // No matter whether the source peer has applied to the required index,
         // it's a race to write apply state in both source delegate and target

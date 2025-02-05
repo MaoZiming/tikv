@@ -9,7 +9,7 @@ use kvproto::metapb::{Peer, Region};
 use raft::StateRole;
 use raftstore::{coprocessor::*, store::RegionSnapshot, Error as RaftStoreError};
 use tikv::storage::Statistics;
-use tikv_util::{error, warn, worker::Scheduler, info};
+use tikv_util::{error, warn, worker::Scheduler};
 
 use crate::{
     endpoint::{Deregister, Task},
@@ -117,11 +117,6 @@ impl<E: KvEngine> CmdObserver<E> for CdcObserver {
             return;
         }
         let mut region = Region::default();
-        info!(
-            "Initialized Region: region_id={}, guard_value={}",
-            region.get_id(),
-            region.guard_value.clone()
-        );
         region.mut_peers().push(Peer::default());
         // Create a snapshot here for preventing the old value was GC-ed.
         // TODO: only need it after enabling old value, may add a flag to indicate
