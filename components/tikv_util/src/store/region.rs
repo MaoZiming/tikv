@@ -277,14 +277,23 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
 }
 
 /// Concatenates all guard values for a given `region_id` into a single comma-separated string.
+
 pub fn get_region_guard(region_id: u64) -> Option<String> {
     print_region_guard_map();
-    // Concurrency-safe read
+    
     match REGION_TO_GUARD_MAP.get(&region_id) {
         Some(range_guards) => {
             let all_guards = range_guards
                 .iter()
-                .map(|rg| rg.guard_value.clone())
+                .map(|rg| {
+                    let start_key_hex = hex::encode(&rg.start_key);
+                    let end_key_hex = if rg.end_key.is_empty() {
+                        "END".to_string()
+                    } else {
+                        hex::encode(&rg.end_key)
+                    };
+                    format!("{}({}, {})", rg.guard_value, start_key_hex, end_key_hex)
+                })
                 .collect::<Vec<_>>()
                 .join(",");
 
@@ -300,7 +309,6 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
         }
     }
 }
-
 
 /// Check if key in region range (`start_key`, `end_key`).
 pub fn check_key_in_region_exclusive(key: &[u8], region: &Region) -> bool {
