@@ -16,7 +16,6 @@ define_error_codes!(
     REGION_NOT_FOUND => ("RegionNotFound", "", ""),
     REGION_NOT_INITIALIZED => ("RegionNotInitialized", "", ""),
     KEY_NOT_IN_REGION => ("KeyNotInRegion", "", ""),
-    GUARD_NOT_IN_REGION => ("GUARD_NOT_IN_REGION", "", ""),
     STALE_COMMAND => ("StaleCommand", "", ""),
     TRANSPORT => ("Transport", "", ""),
     COPROCESSOR => ("Coprocessor", "", ""),

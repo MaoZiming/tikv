@@ -1153,9 +1153,7 @@ impl<E: Engine, L: LockManager> TxnScheduler<E, L> {
 
             let region_id = task.cmd.ctx().get_region_id();
             let ts = task.cmd.ts();
-            let mut sched_details = SchedulerDetails::new(task.tracker, timer);
-            
-            info!("Received command: {:?}", task.cmd);
+            let mut sched_details = SchedulerDetails::new(task.tracker, timer);            
             match &task.cmd {
                 Command::Prewrite(_) | Command::PrewritePessimistic(_) => {
                     tls_collect_query(region_id, QueryKind::Prewrite);

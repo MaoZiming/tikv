@@ -86,7 +86,6 @@ impl SubscriptionManager {
     async fn emit_events(&mut self, events: Box<[FlushEvent]>) {
         let mut canceled = vec![];
         info!("log backup sending events"; "event_len" => %events.len(), "downstream" => %self.subscribers.len());
-        info!("This is a test!! emit_events");
         for (id, sub) in &mut self.subscribers {
             let send_all = async {
                 for es in events.chunks(1024) {

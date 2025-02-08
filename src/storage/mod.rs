@@ -1509,7 +1509,6 @@ impl<E: Engine, L: LockManager, F: KvFormat> Storage<E, L, F> {
         };
 
         let cmd: Command = cmd.into();
-        info!("sched_txn_command command: {:?}", cmd);
 
         match &cmd {
             Command::Prewrite(Prewrite { mutations, .. }) => {

@@ -45,9 +45,6 @@ impl CommandExt for Commit {
 
 impl<S: Snapshot, L: LockManager> WriteCommand<S, L> for Commit {
     fn process_write(self, snapshot: S, context: WriteContext<'_, L>) -> Result<WriteResult> {
-
-        info!("process_write in commands!!");
-
         if self.commit_ts <= self.lock_ts {
             return Err(Error::from(ErrorInner::InvalidTxnTso {
                 start_ts: self.lock_ts,

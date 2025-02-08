@@ -3965,7 +3965,6 @@ where
 
     fn from_registration(reg: Registration) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let (tx, rx) = loose_bounded(usize::MAX);
-        info!("From registration");
         let delegate = ApplyDelegate::from_registration(reg);
         (
             tx,

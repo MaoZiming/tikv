@@ -487,7 +487,7 @@ impl<EK: KvEngine, R: ApplyResReporter> Apply<EK, R> {
 
         info!(
             self.logger,
-            "split region (v2)";
+            "split region";
             "region" => ?region,
             "index" => log_index,
             "boundaries" => %KeysInfoFormatter(boundaries.iter()),

@@ -76,15 +76,6 @@ pub enum Error {
     )]
     KeyNotInRegion(Vec<u8>, metapb::Region),
 
-    #[error(
-        "Guard {} is not in region key range [{}, {}) for region {}",
-        log_wrappers::Value::key(.0),
-        log_wrappers::Value::key(.1.get_start_key()),
-        log_wrappers::Value::key(.1.get_end_key()),
-        .1.get_id()
-    )]
-    GuardNotInRegion(Vec<u8>, metapb::Region),
-
     #[error("peer {} is not ready, safe_ts {}, region {}", .peer_id, .safe_ts, .region_id)]
     DataIsNotReady {
         region_id: u64,
@@ -206,19 +197,6 @@ impl From<Error> for errorpb::Error {
             }
             Error::KeyNotInRegion(key, region) => {
                 errorpb.mut_key_not_in_region().set_key(key);
-                errorpb
-                    .mut_key_not_in_region()
-                    .set_region_id(region.get_id());
-                errorpb
-                    .mut_key_not_in_region()
-                    .set_start_key(region.get_start_key().to_vec());
-                errorpb
-                    .mut_key_not_in_region()
-                    .set_end_key(region.get_end_key().to_vec());
-            }
-            Error::GuardNotInRegion(guard, region) => {
-                // TODO: MaoZiming (Update errorpb for GuardNotInRegion)
-                errorpb.mut_key_not_in_region().set_key(guard);
                 errorpb
                     .mut_key_not_in_region()
                     .set_region_id(region.get_id());
@@ -363,7 +341,6 @@ impl ErrorCodeExt for Error {
             Error::StaleCommand => error_code::raftstore::STALE_COMMAND,
             Error::RegionNotInitialized(_) => error_code::raftstore::REGION_NOT_INITIALIZED,
             Error::KeyNotInRegion(..) => error_code::raftstore::KEY_NOT_IN_REGION,
-            Error::GuardNotInRegion(..) => error_code::raftstore::GUARD_NOT_IN_REGION,
             Error::Io(_) => error_code::raftstore::IO,
             Error::Engine(e) => e.error_code(),
             Error::Protobuf(_) => error_code::raftstore::PROTOBUF,
