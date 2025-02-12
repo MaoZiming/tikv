@@ -28,7 +28,7 @@ pub fn initial_region(store_id: u64, region_id: u64, peer_id: u64) -> metapb::Re
         region.guard_value.clone()
     );
 
-    // update_region_guard(region_id, region.guard_value.clone());
+    update_region_guard(region_id, region.guard_value.clone());
 
     region
 }
