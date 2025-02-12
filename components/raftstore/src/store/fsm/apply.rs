@@ -1054,7 +1054,7 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        // update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -2621,8 +2621,8 @@ where
             // SPLIT: drop guard on all split region..
             new_region.set_guard_value("default_guard".to_string());
             self.region.set_guard_value("default_guard".to_string());
-            update_region_guard(new_region.get_id(), "default_guard".to_string());
-            update_region_guard(self.region.get_id(), "default_guard".to_string());
+            // update_region_guard(new_region.get_id(), "default_guard".to_string());
+            // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
             info!(
                 "Initialized Region: region_id={}, guard_value={}",
@@ -2630,7 +2630,7 @@ where
                 new_region.guard_value.clone()
             );
 
-            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
+            // update_region_guard(new_region.get_id(), new_region.guard_value.clone());
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2882,8 +2882,8 @@ where
 
         // DROP ALL GUARD during region merge.
         self.region.set_guard_value("default_guard".to_string());
-        update_region_guard(source_region_id, "default_guard".to_string());
-        update_region_guard(self.region.get_id(), "default_guard".to_string());
+        // update_region_guard(source_region_id, "default_guard".to_string());
+        // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
         // No matter whether the source peer has applied to the required index,
         // it's a race to write apply state in both source delegate and target

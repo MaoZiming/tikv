@@ -47,7 +47,7 @@ pub fn print_region_guard_map() {
 /// This *replaces* any existing range definitions for the given `region_id`
 /// with a single guard that covers the whole region.
 pub fn update_region_guard(region_id: u64, guard_value: String) {
-    print_region_guard_map();
+    // print_region_guard_map();
     info!(
         "Updating region guard (entire region): region_id={}, guard_value={}",
         region_id, guard_value
@@ -76,7 +76,7 @@ pub fn update_region_guard(region_id: u64, guard_value: String) {
         "Finished updating region guard (entire region): region_id={}, guard_value={}",
         region_id, guard_value
     );
-    print_region_guard_map();
+    // print_region_guard_map();
 }
 
 /// Returns true if the two RangeGuards [start, end) overlap.
@@ -124,7 +124,7 @@ fn remove_overlaps(rg_vec: &mut Vec<RangeGuard>, main_idx: usize) {
 /// - If guard_value starts with "END_", sets the end_key for the most recently added or matched guard.
 /// - Otherwise, resets the entire region using `update_region_guard`.
 pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Vec<u8>) {
-    print_region_guard_map();
+    // print_region_guard_map();
     info!(
         "Updating region guard with key: region_id={}, guard_value={}, key={}",
         region_id,
@@ -257,7 +257,7 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
         region_id,
         hex::encode_upper(key)
     );
-    print_region_guard_map();
+    // print_region_guard_map();
 
     // Read access is also concurrency-safe; we get a read lock for region_id.
     let rg_vec = match REGION_TO_GUARD_MAP.get(&region_id) {
@@ -311,7 +311,7 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
 /// Concatenates all guard values for a given `region_id` into a single comma-separated string.
 
 pub fn get_region_guard(region_id: u64) -> Option<String> {
-    print_region_guard_map();
+    // print_region_guard_map();
     
     match REGION_TO_GUARD_MAP.get(&region_id) {
         Some(range_guards) => {
