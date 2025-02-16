@@ -98,13 +98,13 @@ pub fn handle_region_merge(
     // Debug info
     println!(
         "handle_region_merge: old_region_id={}, new_region_id={}, \
-         old_range=[{:X?}, {:X?}), new_range=[{:X?}, {:X?})",
+         old_range=[{}, {}), new_range=[{}, {})",
         old_region_id,
         new_region_id,
-        old_region_start_key,
-        old_region_end_key,
-        new_region_start_key,
-        new_region_end_key
+        hex::encode_upper(old_region_start_key),
+        hex::encode_upper(old_region_end_key),
+        hex::encode_upper(new_region_start_key),
+        hex::encode_upper(new_region_end_key)
     );
 
     // 1) Locate the old region's guards.
@@ -124,6 +124,7 @@ pub fn handle_region_merge(
         || compare_end_keys(old_region_end_key, new_region_end_key) == Ordering::Greater
     {
         println!("Old region is not fully contained in new region. Some guards may be out of range.");
+        return;
     }
 
     // 2) Build a list of only the guards that fall inside [new_region_start_key, new_region_end_key).
@@ -135,10 +136,10 @@ pub fn handle_region_merge(
         } else {
             skipped_count += 1;
             println!(
-                "Skipping guard not in new region range => guard_value='{}', range=[{:X?},{:X?})",
+                "Skipping guard not in new region range => guard_value='{}', range=[{},{})",
                 guard.guard_value,
-                guard.start_key,
-                guard.end_key
+                hex::encode_upper(guard.start_key),
+                hex::encode_upper(guard.end_key)
             );
         }
     }
@@ -186,13 +187,13 @@ pub fn handle_region_split(
     // Debug info
     println!(
         "handle_region_split: old_region_id={}, new_region_id={}, \
-         old_range=[{:X?}, {:X?}], new_range=[{:X?}, {:X?}]",
+         old_range=[{}, {}], new_range=[{}, {}]",
         old_region_id,
         new_region_id,
-        old_region_start_key,
-        old_region_end_key,
-        new_region_start_key,
-        new_region_end_key
+        hex::encode_upper(old_region_start_key),
+        hex::encode_upper(old_region_end_key),
+        hex::encode_upper(new_region_start_key),
+        hex::encode_upper(new_region_end_key)
     );
 
     // Get the RangeGuard vector for the old region (if none, nothing to do).
