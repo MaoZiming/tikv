@@ -98,6 +98,8 @@ use crate::{
     },
     Error, Result,
 };
+use tikv_util::store::region::set_region_guard_from_string;
+use tikv_util::store::region::get_region_guard;
 
 // These consts are shared in both v1 and v2.
 pub const DEFAULT_APPLY_WB_SIZE: usize = 4 * 1024;
@@ -1053,7 +1055,7 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        set_region_guard_from_string(reg.region.get_id(), reg.region.get_guard_value().to_string());
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -2618,19 +2620,32 @@ where
             new_region.set_peers(derived.get_peers().to_vec().into());
 
             // SPLIT: drop guard on all split region..
-            new_region.set_guard_value("default_guard".to_string());
-            self.region.set_guard_value("default_guard".to_string());
-            update_region_guard(new_region.get_id(), "default_guard".to_string());
-            update_region_guard(self.region.get_id(), "default_guard".to_string());
+            // new_region.set_guard_value("default_guard".to_string());
+            // self.region.set_guard_value("default_guard".to_string());
+
+            /* Print */
+            if let Some(guard) = get_region_guard(self.region.get_id()) {
+                info!("self.region guard: {}", guard);
+            } else {
+                info!("self.region has no guard value");
+            }
+            if let Some(guard) = get_region_guard(new_region.get_id()) {
+                info!("new_region guard: {}", guard);
+            } else {
+                info!("new_region has no guard value");
+            }
+
+            // update_region_guard(new_region.get_id(), "default_guard".to_string());
+            // update_region_guard(self.region.get_id(), "default_guard".to_string());
             
-            // handle_region_split(
-            //     self.region.get_id(), 
-            //     self.region.get_start_key(),
-            //     self.region.get_end_key(),
-            //     new_region.get_id(),
-            //     new_region.get_start_key(),
-            //     new_region.get_end_key() 
-            // );
+            handle_region_split(
+                self.region.get_id(), 
+                self.region.get_start_key(),
+                self.region.get_end_key(),
+                new_region.get_id(),
+                new_region.get_start_key(),
+                new_region.get_end_key() 
+            );
 
             info!(
                 "Initialized Region: region_id={}, guard_value={}",
@@ -2638,7 +2653,13 @@ where
                 new_region.guard_value.clone()
             );
 
-            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
+            if let Some(guard) = get_region_guard(new_region.get_id()) {
+                new_region.set_guard_value(guard);
+            } else {
+                info!("new_region has no guard value");
+            }
+
+            // update_region_guard(new_region.get_id(), new_region.guard_value.clone());
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2662,8 +2683,20 @@ where
             regions.push(derived.clone());
         }
 
-        // filter_region_split(derived.get_id(), self.region.get_start_key(), self.region.get_end_key());
-        
+        filter_region_split(derived.get_id(), self.region.get_start_key(), self.region.get_end_key());
+
+        if let Some(guard) = get_region_guard(derived.get_id()) {
+            derived.set_guard_value(guard);
+        } else {
+            info!("derived has no guard value");
+        }
+
+        if let Some(guard) = get_region_guard(self.region.get_id()) {
+            self.region.set_guard_value(guard);
+        } else {
+            info!("self.region has no guard value");
+        }
+
         // Generally, a peer is created in pending_create_peers when it is
         // created by raft_message (or by split here) and removed from
         // pending_create_peers when it has applied the snapshot. So, if the
