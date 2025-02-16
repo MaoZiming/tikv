@@ -71,8 +71,7 @@ use tikv_util::{
 use time::Timespec;
 use tracker::GLOBAL_TRACKERS;
 use uuid::Builder as UuidBuilder;
-use tikv_util::store::region::update_region_guard;
-
+use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_merge};
 use self::memtrace::*;
 use super::metrics::*;
 use crate::{
@@ -2619,10 +2618,19 @@ where
             new_region.set_peers(derived.get_peers().to_vec().into());
 
             // SPLIT: drop guard on all split region..
-            new_region.set_guard_value("default_guard".to_string());
-            self.region.set_guard_value("default_guard".to_string());
-            update_region_guard(new_region.get_id(), "default_guard".to_string());
-            update_region_guard(self.region.get_id(), "default_guard".to_string());
+            // new_region.set_guard_value("default_guard".to_string());
+            // self.region.set_guard_value("default_guard".to_string());
+            // update_region_guard(new_region.get_id(), "default_guard".to_string());
+            // update_region_guard(self.region.get_id(), "default_guard".to_string());
+            
+            handle_region_split(
+                self.region.get_id(), 
+                self.region.get_start_key(),
+                self.region.get_end_key(),
+                new_region.get_id(),
+                new_region.get_start_key(),
+                new_region.get_end_key() 
+            );
 
             info!(
                 "Initialized Region: region_id={}, guard_value={}",
@@ -2630,7 +2638,7 @@ where
                 new_region.guard_value.clone()
             );
 
-            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
+            // update_region_guard(new_region.get_id(), new_region.guard_value.clone());
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2881,9 +2889,19 @@ where
         let source_region_id = source_region.get_id();
 
         // DROP ALL GUARD during region merge.
-        self.region.set_guard_value("default_guard".to_string());
-        update_region_guard(source_region_id, "default_guard".to_string());
-        update_region_guard(self.region.get_id(), "default_guard".to_string());
+        // self.region.set_guard_value("default_guard".to_string());
+        // update_region_guard(source_region_id, "default_guard".to_string());
+        // update_region_guard(self.region.get_id(), "default_guard".to_string());
+
+        
+        handle_region_merge(
+            source_region_id, 
+            source_region.get_start_key(),
+            source_region.get_end_key(),
+            self.region.get_id(),
+            self.region.get_start_key(),
+            self.region.get_end_key()
+        );
 
         // No matter whether the source peer has applied to the required index,
         // it's a race to write apply state in both source delegate and target
