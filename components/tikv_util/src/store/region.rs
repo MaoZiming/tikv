@@ -138,8 +138,8 @@ pub fn handle_region_merge(
             println!(
                 "Skipping guard not in new region range => guard_value='{}', range=[{},{})",
                 guard.guard_value,
-                hex::encode_upper(guard.start_key),
-                hex::encode_upper(guard.end_key)
+                hex::encode_upper(&guard.start_key),
+                hex::encode_upper(&guard.end_key)
             );
         }
     }
