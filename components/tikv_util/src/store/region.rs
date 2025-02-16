@@ -167,6 +167,57 @@ pub fn handle_region_merge(
     );
 }
 
+
+/// Filters the RangeGuard vector for `old_region_id` so that only guards that
+/// fit into [old_region_start_key, old_region_end_key) remain.
+pub fn filter_region_split(
+    old_region_id: u64,
+    old_region_start_key: &[u8],
+    old_region_end_key: &[u8],
+) {
+    // Look up the old region's RangeGuard list in the DashMap.
+    let mut guard_vec = match REGION_TO_GUARD_MAP.get_mut(&old_region_id) {
+        Some(gv) => gv,
+        None => {
+            println!("No RangeGuards found for region {}", old_region_id);
+            return;
+        }
+    };
+
+    // Filter out any RangeGuard that doesn't fit [old_region_start_key, old_region_end_key).
+    // We'll build a new Vec of only the "in-range" guards.
+    let original_count = guard_vec.len();
+    let updated_guards: Vec<RangeGuard> = guard_vec
+        .iter()
+        .cloned() // clone each RangeGuard
+        .filter(|g| {
+            let in_range = guard_in_region_range(g, old_region_start_key, old_region_end_key);
+            if !in_range {
+                println!(
+                    "Discarding guard out of range => region={}, guard={:?}",
+                    old_region_id, g
+                );
+            }
+            in_range
+        })
+        .collect();
+
+    // Replace the old list with the filtered list.
+    *guard_vec = updated_guards;
+
+    // Debug info
+    println!(
+        "handle_region_split: region={} filtered from {} => {} guards. \
+         Now only those that fit [{}, {}) remain.",
+        old_region_id,
+        original_count,
+        guard_vec.len(),
+        hex::encode_upper(old_region_start_key),
+        hex::encode_upper(old_region_end_key)
+    );
+}
+
+
 /// Handle region split: old_region -> new_region.
 ///
 /// - old_region_id: the region being split
@@ -212,7 +263,7 @@ pub fn handle_region_split(
     let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
 
     // We'll build a new list of old_region's guards after we handle splitting.
-    let mut updated_old_guards = Vec::with_capacity(old_guards.len());
+    // let mut updated_old_guards = Vec::with_capacity(old_guards.len());
 
     // For each RangeGuard in old region, check if part of it belongs to the new region.
     for guard in old_guards.iter() {
@@ -239,58 +290,59 @@ pub fn handle_region_split(
             // 2) If there's partial overlap, we might keep the portion outside [overlap_start, overlap_end].
 
             // We'll check for partial overlap on the left side:
-            let has_left_part = compare_start_keys(&guard.start_key, &new_region_start_key)
-                == std::cmp::Ordering::Less;
-            // And partial overlap on the right side:
-            let has_right_part = compare_end_keys(&guard.end_key, &new_region_end_key)
-                == std::cmp::Ordering::Greater;
+            // let has_left_part = compare_start_keys(&guard.start_key, &new_region_start_key)
+            //     == std::cmp::Ordering::Less;
+            // // And partial overlap on the right side:
+            // let has_right_part = compare_end_keys(&guard.end_key, &new_region_end_key)
+            //     == std::cmp::Ordering::Greater;
 
-            match (has_left_part, has_right_part) {
-                // If old guard is partially left only.
-                (true, false) => {
-                    let mut modified_guard = guard.clone();
-                    modified_guard.end_key = new_region_start_key.to_vec();
-                    updated_old_guards.push(modified_guard);
-                }
-                // If old guard is partially right only.
-                (false, true) => {
-                    let mut modified_guard = guard.clone();
-                    modified_guard.start_key = new_region_end_key.to_vec();
-                    updated_old_guards.push(modified_guard);
-                }
-                // If old guard is partially left and right => split into two.
-                (true, true) => {
-                    let mut left_guard = guard.clone();
-                    left_guard.end_key = new_region_start_key.to_vec();
-                    let mut right_guard = guard.clone();
-                    right_guard.start_key = new_region_end_key.to_vec();
-                    updated_old_guards.push(left_guard);
-                    updated_old_guards.push(right_guard);
-                }
-                // If neither left nor right => fully contained in new region => skip for old region.
-                (false, false) => {}
-            }
+            // match (has_left_part, has_right_part) {
+            //     // If old guard is partially left only.
+            //     (true, false) => {
+            //         let mut modified_guard = guard.clone();
+            //         modified_guard.end_key = new_region_start_key.to_vec();
+            //         // updated_old_guards.push(modified_guard);
+            //     }
+            //     // If old guard is partially right only.
+            //     (false, true) => {
+            //         let mut modified_guard = guard.clone();
+            //         modified_guard.start_key = new_region_end_key.to_vec();
+            //         // updated_old_guards.push(modified_guard);
+            //     }
+            //     // If old guard is partially left and right => split into two.
+            //     (true, true) => {
+            //         let mut left_guard = guard.clone();
+            //         left_guard.end_key = new_region_start_key.to_vec();
+            //         let mut right_guard = guard.clone();
+            //         right_guard.start_key = new_region_end_key.to_vec();
+
+            //         // updated_old_guards.push(left_guard);
+            //         // updated_old_guards.push(right_guard);
+            //     }
+            //     // If neither left nor right => fully contained in new region => skip for old region.
+            //     (false, false) => {}
+            // }
         } else {
             // No overlap with new region => keep it in old region as is.
-            updated_old_guards.push(guard.clone());
+            // updated_old_guards.push(guard.clone());
         }
     }
 
     // Replace old region's guards with the updated list.
-    *old_guards = updated_old_guards;
+    // *old_guards = updated_old_guards;
 
 
     // Verification step: all old_region's guards must lie in [old_region_start_key, old_region_end_key).
-    for guard in old_guards.iter() {
-        if !key_in_range(&guard.start_key, &old_region_start_key, &old_region_end_key)
-            || !key_in_range(&guard.end_key, &old_region_start_key, &old_region_end_key)
-        {
-            println!(
-                "Warning: old_region_id={} has guard out of range => {:?}",
-                old_region_id, guard
-            );
-        }
-    }
+    // for guard in old_guards.iter() {
+    //     if !key_in_range(&guard.start_key, &old_region_start_key, &old_region_end_key)
+    //         || !key_in_range(&guard.end_key, &old_region_start_key, &old_region_end_key)
+    //     {
+    //         println!(
+    //             "Warning: old_region_id={} has guard out of range => {:?}",
+    //             old_region_id, guard
+    //         );
+    //     }
+    // }
 
     // Verification step: all new_region's guards must lie in [new_region_start_key, new_region_end_key).
     for guard in new_guards.iter() {
@@ -312,6 +364,8 @@ pub fn handle_region_split(
         new_guards.len()
     );
 }
+
+
 
 
 /// Helper function to print the entire REGION_TO_GUARD_MAP.

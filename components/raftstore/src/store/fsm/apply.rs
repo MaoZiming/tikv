@@ -71,7 +71,7 @@ use tikv_util::{
 use time::Timespec;
 use tracker::GLOBAL_TRACKERS;
 use uuid::Builder as UuidBuilder;
-use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_merge};
+use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_merge, filter_region_split};
 use self::memtrace::*;
 use super::metrics::*;
 use crate::{
@@ -2638,7 +2638,7 @@ where
                 new_region.guard_value.clone()
             );
 
-            // update_region_guard(new_region.get_id(), new_region.guard_value.clone());
+            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2662,6 +2662,8 @@ where
             regions.push(derived.clone());
         }
 
+        // filter_region_split(derived.get_id(), self.region.get_start_key(), self.region.get_end_key());
+        
         // Generally, a peer is created in pending_create_peers when it is
         // created by raft_message (or by split here) and removed from
         // pending_create_peers when it has applied the snapshot. So, if the
