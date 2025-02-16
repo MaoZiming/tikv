@@ -1558,7 +1558,7 @@ where
                         "ExecResult::ChangePeer, region_id: {}, guard: {}",
                         region_id, region_guard
                     );
-                    set_region_guard_from_string(region_id, region_guard);
+                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::ComputeHash { .. }
                 | ExecResult::VerifyHash { .. }
@@ -1573,7 +1573,7 @@ where
                         "ExecResult::<Other>, region_id: {}, guard: {}",
                         region_id, region_guard
                     );
-                    set_region_guard_from_string(region_id, region_guard);
+                    // set_region_guard_from_string(region_id, region_guard);
 
                 }
                 ExecResult::SplitRegion { ref derived, .. } => {
@@ -1596,7 +1596,7 @@ where
                         "ExecResult::PrepareMerge, region_id: {}, guard: {}",
                         region_id, region_guard
                     );
-                    set_region_guard_from_string(region_id, region_guard);
+                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::CommitMerge { ref region, .. } => {
                     self.region = region.clone();
@@ -1607,7 +1607,7 @@ where
                         "ExecResult::CommitMerge, region_id: {}, guard: {}",
                         region_id, region_guard
                     );
-                    set_region_guard_from_string(region_id, region_guard);
+                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::RollbackMerge { ref region, .. } => {
                     self.region = region.clone();
@@ -2687,14 +2687,14 @@ where
             update_region_guard(new_region.get_id(), "default_guard".to_string());
             update_region_guard(self.region.get_id(), "default_guard".to_string());
             
-            handle_region_split(
-                self.region.get_id(), 
-                self.region.get_start_key(),
-                self.region.get_end_key(),
-                new_region.get_id(),
-                new_region.get_start_key(),
-                new_region.get_end_key() 
-            );
+            // handle_region_split(
+            //     self.region.get_id(), 
+            //     self.region.get_start_key(),
+            //     self.region.get_end_key(),
+            //     new_region.get_id(),
+            //     new_region.get_start_key(),
+            //     new_region.get_end_key() 
+            // );
 
             info!(
                 "Initialized Region: region_id={}, guard_value={}",
@@ -2738,7 +2738,7 @@ where
             regions.push(derived.clone());
         }
 
-        filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
+        // filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
 
         if let Some(guard) = get_region_guard(derived.get_id()) {
             derived.set_guard_value(guard);
