@@ -726,6 +726,9 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 /// The expected format for each guard is: `guard_value(start_key_hex,end_key_hex)`.
 /// If the start or end key is empty, it is represented by a colon (`:`).
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
+
+    info!("set_region_guard_from_string: {:?}", guard_value);
+
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {
         REGION_TO_GUARD_MAP.remove(&region_id);

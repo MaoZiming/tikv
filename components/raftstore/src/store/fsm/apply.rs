@@ -1392,6 +1392,10 @@ where
             return exec_result;
         }
 
+        if let Some(guard) = get_region_guard(self.region_id()) {
+            self.region.set_guard_value(guard);
+        }
+
         debug!(
             "applied command";
             "region_id" => self.region_id(),
@@ -1552,6 +1556,13 @@ where
                     if let Some(p) = find_peer_by_id(&self.region, self.id()) {
                         self.peer = p.clone();
                     }
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::ChangePeer, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
+                    set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::ComputeHash { .. }
                 | ExecResult::VerifyHash { .. }
@@ -1559,32 +1570,79 @@ where
                 | ExecResult::DeleteRange { .. }
                 | ExecResult::IngestSst { .. }
                 | ExecResult::TransferLeader { .. }
-                | ExecResult::HasPendingCompactCmd(..) => {}
+                | ExecResult::HasPendingCompactCmd(..) => {
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::<Other>, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
+                    set_region_guard_from_string(region_id, region_guard);
+
+                }
                 ExecResult::SplitRegion { ref derived, .. } => {
                     self.region = derived.clone();
                     self.metrics.size_diff_hint = 0;
                     self.metrics.delete_keys_hint = 0;
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::SplitRegion, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
                 }
                 ExecResult::PrepareMerge { ref region, .. } => {
                     self.region = region.clone();
                     self.is_merging = true;
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::PrepareMerge, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
+                    set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::CommitMerge { ref region, .. } => {
                     self.region = region.clone();
                     self.last_merge_version = region.get_region_epoch().get_version();
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::CommitMerge, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
+                    set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::RollbackMerge { ref region, .. } => {
                     self.region = region.clone();
                     self.is_merging = false;
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::RollbackMerge, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
                 }
                 ExecResult::Flashback { ref region } => {
                     self.region = region.clone();
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::Flashback, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
                 }
                 ExecResult::BatchSwitchWitness(ref switches) => {
                     self.region = switches.region.clone();
                     if let Some(p) = find_peer_by_id(&self.region, self.id()) {
                         self.peer = p.clone();
                     }
+                    let region_id = self.region.get_id();
+                    let region_guard = get_region_guard(region_id).unwrap_or_else(|| "None".to_string());
+                    info!(
+                        "ExecResult::BatchSwitchWitness, region_id: {}, guard: {}",
+                        region_id, region_guard
+                    );
                 }
             }
         }
@@ -2625,14 +2683,9 @@ where
 
             /* Print */
             if let Some(guard) = get_region_guard(self.region.get_id()) {
-                info!("self.region guard: {}", guard);
+                info!("self.region {} guard: {}", self.region.get_id(), guard);
             } else {
-                info!("self.region has no guard value");
-            }
-            if let Some(guard) = get_region_guard(new_region.get_id()) {
-                info!("new_region guard: {}", guard);
-            } else {
-                info!("new_region has no guard value");
+                info!("self.region {} has no guard value", self.region.get_id());
             }
 
             // update_region_guard(new_region.get_id(), "default_guard".to_string());
@@ -2652,6 +2705,12 @@ where
                 new_region.get_id(),
                 new_region.guard_value.clone()
             );
+
+            if let Some(guard) = get_region_guard(new_region.get_id()) {
+                info!("new_region {} guard: {}", self.region.get_id(), guard);
+            } else {
+                info!("new_region {} has no guard value", self.region.get_id());
+            }
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
                 new_region.set_guard_value(guard);
@@ -2683,7 +2742,7 @@ where
             regions.push(derived.clone());
         }
 
-        filter_region_split(derived.get_id(), self.region.get_start_key(), self.region.get_end_key());
+        filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
 
         if let Some(guard) = get_region_guard(derived.get_id()) {
             derived.set_guard_value(guard);
