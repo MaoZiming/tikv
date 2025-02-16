@@ -2699,7 +2699,7 @@ where
             info!(
                 "handle_region_split: region_id={}, guard_value={}",
                 new_region.get_id(),
-                get_region_guard(new_region.get_id())
+                get_region_guard(new_region.get_id()).unwrap_or_else(|| "None".to_string())
             );
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
@@ -2743,7 +2743,7 @@ where
         info!(
             "filter_region_split: region_id={}, guard_value={}",
             derived.get_id(),
-            get_region_guard(derived.get_id())
+            get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
         );
 
 
