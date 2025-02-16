@@ -205,7 +205,9 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         hex::encode_upper(&rg_vec[idx].start_key),
                         hex::encode_upper(&key),
                     );
-                    remove_overlaps(rg_vec, idx);
+                    if remove_overlap {
+                        remove_overlaps(rg_vec, idx);
+                    }
                 } else {
                     warn!(
                         "No existing RangeGuard found for region_id={} matching guard_value='{}' \
@@ -239,6 +241,62 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                     guard_value: stripped_value.to_owned(),
                 }]
             });
+    } else if let Some(stripped_value) = guard_value.strip_prefix("GUARD_") {
+        let parts: Vec<&str> = stripped_value.split('_').collect();
+        if parts.len() == 3 {
+            let custom_guard = parts[0];  // The custom guard value.
+            let guard_start = parts[1];   // The start key (expected as hex).
+            let guard_end = parts[2];     // The end key (expected as hex).
+    
+            REGION_TO_GUARD_MAP
+                .entry(region_id)
+                .and_modify(|rg_vec| {
+                    // Look for an existing RangeGuard with the same custom guard value.
+                    if let Some(idx) = rg_vec.iter().position(|rg| rg.guard_value == custom_guard) {
+                        // Update both the start and end keys.
+                        rg_vec[idx].start_key = hex::decode(guard_start).unwrap_or_default();
+                        rg_vec[idx].end_key = hex::decode(guard_end).unwrap_or_default();
+                        info!(
+                            "Reused existing GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
+                            region_id,
+                            custom_guard,
+                            guard_start,
+                            guard_end,
+                        );
+                        if remove_overlap {
+                            remove_overlaps(rg_vec, idx);
+                        }
+                    } else {
+                        // No matching guard exists; insert a new one.
+                        rg_vec.push(RangeGuard {
+                            start_key: hex::decode(guard_start).unwrap_or_default(),
+                            end_key: hex::decode(guard_end).unwrap_or_default(),
+                            guard_value: custom_guard.to_owned(),
+                        });
+                        let idx_new = rg_vec.len() - 1;
+                        info!(
+                            "Added GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
+                            region_id,
+                            custom_guard,
+                            guard_start,
+                            guard_end,
+                        );
+                        if remove_overlap {
+                            remove_overlaps(rg_vec, idx_new);
+                        }
+                    }
+                })
+                .or_insert_with(|| {
+                    // If the region_id did not exist yet, create a new vector with the new guard.
+                    vec![RangeGuard {
+                        start_key: hex::decode(guard_start).unwrap_or_default(),
+                        end_key: hex::decode(guard_end).unwrap_or_default(),
+                        guard_value: custom_guard.to_owned(),
+                    }]
+                });
+        } else {
+            warn!("Invalid GUARD pattern: {}", guard_value);
+        }
     } else {
         // If guard_value does not begin with "START_" or "END_", call update_region_guard 
         // to make the guard_value cover the entire region.
