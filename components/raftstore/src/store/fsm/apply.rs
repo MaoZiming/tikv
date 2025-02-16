@@ -2618,8 +2618,8 @@ where
             new_region.set_peers(derived.get_peers().to_vec().into());
 
             // SPLIT: drop guard on all split region..
-            // new_region.set_guard_value("default_guard".to_string());
-            // self.region.set_guard_value("default_guard".to_string());
+            new_region.set_guard_value("default_guard".to_string());
+            self.region.set_guard_value("default_guard".to_string());
             // update_region_guard(new_region.get_id(), "default_guard".to_string());
             // update_region_guard(self.region.get_id(), "default_guard".to_string());
             
@@ -2889,11 +2889,11 @@ where
         let source_region_id = source_region.get_id();
 
         // DROP ALL GUARD during region merge.
-        // self.region.set_guard_value("default_guard".to_string());
+        self.region.set_guard_value("default_guard".to_string());
         // update_region_guard(source_region_id, "default_guard".to_string());
         // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
-        
+
         handle_region_merge(
             source_region_id, 
             source_region.get_start_key(),

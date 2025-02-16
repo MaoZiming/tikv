@@ -17,49 +17,68 @@ struct RangeGuard {
 // Globally accessible map: region_id -> vector of RangeGuard
 static REGION_TO_GUARD_MAP: Lazy<DashMap<u64, Vec<RangeGuard>>> = Lazy::new(DashMap::new);
 
-/// Compare two Vec<u8> as if they are big-endian bytes (lexicographical).
-fn compare_keys(a: &[u8], b: &[u8]) -> std::cmp::Ordering {
-    a.cmp(b)
+/// Compare two start keys, where an empty key is treated as -∞.
+fn compare_start_keys(a: &[u8], b: &[u8]) -> Ordering {
+    match (a.is_empty(), b.is_empty()) {
+        (true, true) => Ordering::Equal,       // -∞ == -∞
+        (true, false) => Ordering::Less,       // -∞ < anything
+        (false, true) => Ordering::Greater,    // anything > -∞
+        (false, false) => a.cmp(b),            // normal lexicographical compare
+    }
+}
+
+/// Compare two end keys, where an empty key is treated as +∞.
+fn compare_end_keys(a: &[u8], b: &[u8]) -> Ordering {
+    match (a.is_empty(), b.is_empty()) {
+        (true, true) => Ordering::Equal,       // +∞ == +∞
+        (true, false) => Ordering::Greater,    // +∞ > anything
+        (false, true) => Ordering::Less,       // anything < +∞
+        (false, false) => a.cmp(b),            // normal lexicographical compare
+    }
 }
 
 /// Return true if key is in [range_start, range_end).
 fn key_in_range(key: &[u8], range_start: &[u8], range_end: &[u8]) -> bool {
     // range_start <= key < range_end
-    compare_keys(range_start, key) != Ordering::Greater
-        && compare_keys(key, range_end) == Ordering::Less
+    // using specialized comparisons:
+    compare_start_keys(range_start, key) != Ordering::Greater
+        && compare_end_keys(key, range_end) == Ordering::Less
 }
 
 
 /// Return `true` if the [guard_start, guard_end) range is entirely within [region_start, region_end).
 fn guard_in_region_range(guard: &RangeGuard, region_start: &[u8], region_end: &[u8]) -> bool {
     // region_start <= guard.start_key AND guard.end_key <= region_end
-    (compare_keys(region_start, &guard.start_key) != Ordering::Greater)
-        && (compare_keys(&guard.end_key, region_end) != Ordering::Greater)
+    (compare_start_keys(region_start, &guard.start_key) != Ordering::Greater)
+        && (compare_end_keys(&guard.end_key, region_end) != Ordering::Greater)
 }
 
 /// Check if [guard_start, guard_end] overlaps with [region_start, region_end].
 /// Returns (overlap_start, overlap_end) if there is an overlap, or None otherwise.
+///
+/// An empty `guard_start` or `region_start` is treated as -∞.
+/// An empty `guard_end` or `region_end` is treated as +∞.
 fn range_overlap(
     guard_start: &[u8],
     guard_end: &[u8],
     region_start: &[u8],
     region_end: &[u8],
 ) -> Option<(Vec<u8>, Vec<u8>)> {
-    // Start = max(guard_start, region_start)
-    let overlap_start = if compare_keys(guard_start, region_start) == std::cmp::Ordering::Less {
-        region_start
-    } else {
-        guard_start
-    };
-    // End = min(guard_end, region_end)
-    let overlap_end = if compare_keys(guard_end, region_end) == std::cmp::Ordering::Greater {
-        region_end
-    } else {
-        guard_end
+    // overlap_start = max(guard_start, region_start) using compare_start_keys
+    let overlap_start = match compare_start_keys(guard_start, region_start) {
+        Ordering::Greater => guard_start,
+        _ => region_start,
     };
 
-    // Overlap is valid if overlap_start <= overlap_end
-    if compare_keys(overlap_start, overlap_end) != std::cmp::Ordering::Greater {
+    // overlap_end = min(guard_end, region_end) using compare_end_keys
+    let overlap_end = match compare_end_keys(guard_end, region_end) {
+        Ordering::Greater => region_end,
+        _ => guard_end,
+    };
+
+    // Now check if overlap_start <= overlap_end in the sense of end-key comparison
+    // (empty => +∞). If overlap_start > overlap_end, no valid overlap.
+    if compare_end_keys(overlap_start, overlap_end) != Ordering::Greater {
         Some((overlap_start.to_vec(), overlap_end.to_vec()))
     } else {
         None
@@ -77,7 +96,7 @@ pub fn handle_region_merge(
     new_region_end_key: &[u8],
 ) {
     // Debug info
-    info!(
+    println!(
         "handle_region_merge: old_region_id={}, new_region_id={}, \
          old_range=[{:X?}, {:X?}), new_range=[{:X?}, {:X?})",
         old_region_id,
@@ -92,7 +111,7 @@ pub fn handle_region_merge(
     let old_guards = match REGION_TO_GUARD_MAP.get(&old_region_id) {
         Some(guard_vec) => guard_vec.clone(),
         None => {
-            info!(
+            println!(
                 "No RangeGuards found for old_region_id={}, nothing to merge.",
                 old_region_id
             );
@@ -101,10 +120,10 @@ pub fn handle_region_merge(
     };
 
     // (Optional) Log a warning if the old region is not fully contained in the new region.
-    if compare_keys(old_region_start_key, new_region_start_key) == Ordering::Less
-        || compare_keys(old_region_end_key, new_region_end_key) == Ordering::Greater
+    if compare_start_keys(old_region_start_key, new_region_start_key) == Ordering::Less
+        || compare_end_keys(old_region_end_key, new_region_end_key) == Ordering::Greater
     {
-        warn!("Old region is not fully contained in new region. Some guards may be out of range.");
+        println!("Old region is not fully contained in new region. Some guards may be out of range.");
     }
 
     // 2) Build a list of only the guards that fall inside [new_region_start_key, new_region_end_key).
@@ -115,7 +134,7 @@ pub fn handle_region_merge(
             transferred_guards.push(guard.clone());
         } else {
             skipped_count += 1;
-            info!(
+            println!(
                 "Skipping guard not in new region range => guard_value='{}', range=[{:X?},{:X?})",
                 guard.guard_value,
                 guard.start_key,
@@ -134,7 +153,7 @@ pub fn handle_region_merge(
     REGION_TO_GUARD_MAP.remove(&old_region_id);
 
     // 5) Final log / verification
-    info!(
+    println!(
         "Merged old_region_id={} into new_region_id={}. \
          Moved {} guards; skipped {} out-of-range guards. \
          New region had {} => now has {} guards total.",
@@ -165,7 +184,7 @@ pub fn handle_region_split(
     new_region_end_key: &[u8],
 ) {
     // Debug info
-    info!(
+    println!(
         "handle_region_split: old_region_id={}, new_region_id={}, \
          old_range=[{:X?}, {:X?}], new_range=[{:X?}, {:X?}]",
         old_region_id,
@@ -180,7 +199,7 @@ pub fn handle_region_split(
     let mut old_guards = match REGION_TO_GUARD_MAP.get_mut(&old_region_id) {
         Some(guard_vec) => guard_vec,
         None => {
-            info!(
+            println!(
                 "No RangeGuards found for old_region_id={}, nothing to split.",
                 old_region_id
             );
@@ -219,10 +238,10 @@ pub fn handle_region_split(
             // 2) If there's partial overlap, we might keep the portion outside [overlap_start, overlap_end].
 
             // We'll check for partial overlap on the left side:
-            let has_left_part = compare_keys(&guard.start_key, &new_region_start_key)
+            let has_left_part = compare_start_keys(&guard.start_key, &new_region_start_key)
                 == std::cmp::Ordering::Less;
             // And partial overlap on the right side:
-            let has_right_part = compare_keys(&guard.end_key, &new_region_end_key)
+            let has_right_part = compare_end_keys(&guard.end_key, &new_region_end_key)
                 == std::cmp::Ordering::Greater;
 
             match (has_left_part, has_right_part) {
@@ -265,7 +284,7 @@ pub fn handle_region_split(
         if !key_in_range(&guard.start_key, &old_region_start_key, &old_region_end_key)
             || !key_in_range(&guard.end_key, &old_region_start_key, &old_region_end_key)
         {
-            eprintln!(
+            println!(
                 "Warning: old_region_id={} has guard out of range => {:?}",
                 old_region_id, guard
             );
@@ -277,7 +296,7 @@ pub fn handle_region_split(
         if !key_in_range(&guard.start_key, &new_region_start_key, &new_region_end_key)
             || !key_in_range(&guard.end_key, &new_region_start_key, &new_region_end_key)
         {
-            eprintln!(
+            println!(
                 "Warning: new_region_id={} has guard out of range => {:?}",
                 new_region_id, guard
             );
