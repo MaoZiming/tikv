@@ -2684,7 +2684,7 @@ where
                 info!("self.region {} has no guard value", self.region.get_id());
             }
 
-            update_region_guard(new_region.get_id(), "default_guard".to_string());
+            // update_region_guard(new_region.get_id(), "default_guard".to_string());
             update_region_guard(self.region.get_id(), "default_guard".to_string());
             
             handle_region_split(
@@ -2697,9 +2697,9 @@ where
             );
 
             info!(
-                "Initialized Region: region_id={}, guard_value={}",
+                "handle_region_split: region_id={}, guard_value={}",
                 new_region.get_id(),
-                new_region.guard_value.clone()
+                get_region_guard(new_region.get_id())
             );
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
@@ -2739,6 +2739,13 @@ where
         }
 
         filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
+
+        info!(
+            "filter_region_split: region_id={}, guard_value={}",
+            derived.get_id(),
+            get_region_guard(derived.get_id())
+        );
+
 
         if let Some(guard) = get_region_guard(derived.get_id()) {
             derived.set_guard_value(guard);
