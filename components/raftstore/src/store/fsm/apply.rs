@@ -1055,7 +1055,7 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        set_region_guard_from_string(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -2676,6 +2676,7 @@ where
             // SPLIT: drop guard on all split region..
             new_region.set_guard_value("default_guard".to_string());
             self.region.set_guard_value("default_guard".to_string());
+            update_region_guard(new_region.get_id(), "default_guard".to_string());
 
             /* Print */
             if let Some(guard) = get_region_guard(self.region.get_id()) {
@@ -2687,14 +2688,14 @@ where
             // update_region_guard(new_region.get_id(), "default_guard".to_string());
             update_region_guard(self.region.get_id(), "default_guard".to_string());
             
-            handle_region_split(
-                self.region.get_id(), 
-                self.region.get_start_key(),
-                self.region.get_end_key(),
-                new_region.get_id(),
-                new_region.get_start_key(),
-                new_region.get_end_key() 
-            );
+            // handle_region_split(
+            //     self.region.get_id(), 
+            //     self.region.get_start_key(),
+            //     self.region.get_end_key(),
+            //     new_region.get_id(),
+            //     new_region.get_start_key(),
+            //     new_region.get_end_key() 
+            // );
 
             info!(
                 "handle_region_split: region_id={}, guard_value={}",
@@ -2702,6 +2703,7 @@ where
                 get_region_guard(new_region.get_id()).unwrap_or_else(|| "None".to_string())
             );
 
+            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
             if let Some(guard) = get_region_guard(new_region.get_id()) {
                 info!("new_region {} guard: {}", self.region.get_id(), guard);
             } else {
@@ -2709,7 +2711,8 @@ where
             }
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
-                new_region.set_guard_value(guard);
+                // new_region.set_guard_value(guard);
+                ;
             } else {
                 info!("new_region has no guard value");
             }
@@ -2738,7 +2741,7 @@ where
             regions.push(derived.clone());
         }
 
-        filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
+        // filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
 
         info!(
             "filter_region_split: region_id={}, guard_value={}",
@@ -2748,13 +2751,15 @@ where
 
 
         if let Some(guard) = get_region_guard(derived.get_id()) {
-            derived.set_guard_value(guard);
+            // derived.set_guard_value(guard);
+            ;
         } else {
             info!("derived has no guard value");
         }
 
         if let Some(guard) = get_region_guard(self.region.get_id()) {
-            self.region.set_guard_value(guard);
+            // self.region.set_guard_value(guard);
+            ;
         } else {
             info!("self.region has no guard value");
         }
