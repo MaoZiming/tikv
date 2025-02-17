@@ -2674,36 +2674,34 @@ where
             new_region.set_peers(derived.get_peers().to_vec().into());
 
             // SPLIT: drop guard on all split region..
-            new_region.set_guard_value("default_guard".to_string());
             self.region.set_guard_value("default_guard".to_string());
-            update_region_guard(new_region.get_id(), "default_guard".to_string());
+            update_region_guard(self.region.get_id(), "default_guard".to_string());
 
-            /* Print */
             if let Some(guard) = get_region_guard(self.region.get_id()) {
                 info!("self.region {} guard: {}", self.region.get_id(), guard);
             } else {
                 info!("self.region {} has no guard value", self.region.get_id());
             }
 
-            // update_region_guard(new_region.get_id(), "default_guard".to_string());
-            update_region_guard(self.region.get_id(), "default_guard".to_string());
-            
-            // handle_region_split(
-            //     self.region.get_id(), 
-            //     self.region.get_start_key(),
-            //     self.region.get_end_key(),
-            //     new_region.get_id(),
-            //     new_region.get_start_key(),
-            //     new_region.get_end_key() 
-            // );
+            // new_region.set_guard_value("default_guard".to_string());
+            // update_region_guard(new_region.get_id(), "default_guard".to_string());            
+            handle_region_split(
+                self.region.get_id(), 
+                self.region.get_start_key(),
+                self.region.get_end_key(),
+                new_region.get_id(),
+                new_region.get_start_key(),
+                new_region.get_end_key() 
+            );
+            let new_region_guard = get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string());
+            new_region.set_guard_value(new_region_guard.clone());
 
             info!(
                 "handle_region_split: region_id={}, guard_value={}",
                 new_region.get_id(),
-                get_region_guard(new_region.get_id()).unwrap_or_else(|| "None".to_string())
+                new_region_guard
             );
 
-            update_region_guard(new_region.get_id(), new_region.guard_value.clone());
             if let Some(guard) = get_region_guard(new_region.get_id()) {
                 info!("new_region {} guard: {}", self.region.get_id(), guard);
             } else {
@@ -4079,7 +4077,6 @@ where
         peer: &Peer<EK, ER>,
     ) -> (LooseBoundedSender<Msg<EK>>, Box<ApplyFsm<EK>>) {
         let reg = Registration::new(peer);
-        info!("From peer");
         ApplyFsm::from_registration(reg)
     }
 
