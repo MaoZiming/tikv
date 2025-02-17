@@ -2741,6 +2741,7 @@ where
             derived.get_id(),
             get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
         );
+        // derived.set_guard_value("default_guard".to_string());
 
         // Generally, a peer is created in pending_create_peers when it is
         // created by raft_message (or by split here) and removed from
@@ -2969,9 +2970,9 @@ where
         let source_region_id = source_region.get_id();
 
         // DROP ALL GUARD during region merge.
-        self.region.set_guard_value("default_guard".to_string());
-        update_region_guard(source_region_id, "default_guard".to_string());
-        update_region_guard(self.region.get_id(), "default_guard".to_string());
+        // self.region.set_guard_value("default_guard".to_string());
+        // update_region_guard(source_region_id, "default_guard".to_string());
+        // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
 
         // handle_region_merge(

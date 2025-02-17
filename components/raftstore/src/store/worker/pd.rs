@@ -2465,7 +2465,7 @@ fn new_batch_split_region_request(
         split.set_split_key(key);
         split.set_new_region_id(id.get_new_region_id());
         split.set_new_peer_ids(id.take_new_peer_ids());
-        split.set_guard_value(guard_value.clone());
+        split.set_guard_value("default_guard".to_string());
         requests.push(split);
     }
     req.mut_splits().set_requests(requests.into());
