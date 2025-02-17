@@ -100,7 +100,6 @@ use crate::{
 };
 use tikv_util::store::region::set_region_guard_from_string;
 use tikv_util::store::region::get_region_guard;
-use txn_types::{self, Key};
 
 // These consts are shared in both v1 and v2.
 pub const DEFAULT_APPLY_WB_SIZE: usize = 4 * 1024;
@@ -2684,20 +2683,13 @@ where
                 info!("self.region {} has no guard value", self.region.get_id());
             }
      
-            // Decode the keys into raw Vec<u8> values first.
-            let old_start = Key::from_encoded(self.region.get_start_key().to_vec()).to_raw().unwrap();
-            let old_end   = Key::from_encoded(self.region.get_end_key().to_vec()).to_raw().unwrap();
-            let new_start = Key::from_encoded(new_region.get_start_key().to_vec()).to_raw().unwrap();
-            let new_end   = Key::from_encoded(new_region.get_end_key().to_vec()).to_raw().unwrap();
-
-            // Now pass references to these vectors.
             handle_region_split(
-                self.region.get_id(),
-                &old_start,
-                &old_end,
+                self.region.get_id(), 
+                self.region.get_start_key(),
+                self.region.get_end_key(),
                 new_region.get_id(),
-                &new_start,
-                &new_end,
+                new_region.get_start_key(),
+                new_region.get_end_key() 
             );
 
             info!(
