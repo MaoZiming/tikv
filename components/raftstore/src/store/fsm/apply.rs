@@ -2682,9 +2682,7 @@ where
             } else {
                 info!("self.region {} has no guard value", self.region.get_id());
             }
-
-            // new_region.set_guard_value("default_guard".to_string());
-            // update_region_guard(new_region.get_id(), "default_guard".to_string());            
+     
             handle_region_split(
                 self.region.get_id(), 
                 self.region.get_start_key(),
@@ -2695,7 +2693,6 @@ where
             );
             let new_region_guard = get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string());
             new_region.set_guard_value("default_guard".to_string());
-            // new_region.set_guard_value(new_region_guard.clone());
 
             info!(
                 "handle_region_split: region_id={}, guard_value={}",
@@ -2710,14 +2707,11 @@ where
             }
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
-                // new_region.set_guard_value(guard);
                 info!("new_region {} guard: {}", new_region.get_id(), guard);
 
             } else {
                 info!("new_region has no guard value");
             }
-
-            // update_region_guard(new_region.get_id(), new_region.guard_value.clone());
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2741,28 +2735,12 @@ where
             regions.push(derived.clone());
         }
 
-        // filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
-
+        filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
         info!(
             "filter_region_split: region_id={}, guard_value={}",
             derived.get_id(),
             get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
         );
-
-
-        if let Some(guard) = get_region_guard(derived.get_id()) {
-            // derived.set_guard_value(guard);
-            ;
-        } else {
-            info!("derived has no guard value");
-        }
-
-        if let Some(guard) = get_region_guard(self.region.get_id()) {
-            // self.region.set_guard_value(guard);
-            ;
-        } else {
-            info!("self.region has no guard value");
-        }
 
         // Generally, a peer is created in pending_create_peers when it is
         // created by raft_message (or by split here) and removed from
