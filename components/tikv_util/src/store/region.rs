@@ -16,7 +16,12 @@ struct RangeGuard {
 
 // Globally accessible map: region_id -> vector of RangeGuard
 static REGION_TO_GUARD_MAP: Lazy<DashMap<u64, Vec<RangeGuard>>> = Lazy::new(DashMap::new);
-static KEY_TO_ENCODED: Lazy<DashMap<Vec<u8>, Vec<u8>>> = Lazy::new(DashMap::new);
+static KEY_TO_ENCODED: Lazy<DashMap<Vec<u8>, Vec<u8>>> = Lazy::new(|| {
+    let map = DashMap::new();
+    // Insert a mapping from an empty Vec to an empty Vec.
+    map.insert(Vec::new(), Vec::new());
+    map
+});
 
 /// Compare two start keys, where an empty key is treated as -∞.
 fn compare_start_keys(a: &[u8], b: &[u8]) -> Ordering {
