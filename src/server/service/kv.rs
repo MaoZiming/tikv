@@ -1357,12 +1357,17 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
     )));
 
     let guard_value = req.get_guard_value();
+    let raw_key = req.get_key();
+    let encoded_key = Key::from_raw(raw_key);
+    
     info!(
-        "future_get: key: {:?}, guard_value: {:?}, range_id: {:?}",
-        Key::from_raw(req.get_key()),
+        "future_get: raw key: {}, encoded key: {}, guard_value: {:?}, range_id: {:?}",
+        hex::encode_upper(raw_key),
+        hex::encode_upper(encoded_key.as_encoded()),
         guard_value,
         req.get_context().get_region_id()
     );
+    
     if !guard_value.is_empty() {
         update_region_guard_with_key(
             req.get_context().get_region_id(),
