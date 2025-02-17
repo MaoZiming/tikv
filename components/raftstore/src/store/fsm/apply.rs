@@ -2675,7 +2675,7 @@ where
 
             // SPLIT: drop guard on all split region..
             self.region.set_guard_value("default_guard".to_string());
-            update_region_guard(self.region.get_id(), "default_guard".to_string());
+            // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
             if let Some(guard) = get_region_guard(self.region.get_id()) {
                 info!("self.region {} guard: {}", self.region.get_id(), guard);
