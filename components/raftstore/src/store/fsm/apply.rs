@@ -1885,14 +1885,14 @@ where
         // region key range has no data prefix, so we must use origin key to check.
         util::check_key_in_region(key, &self.region)?;
 
-        // info!(
-        //     "raftstore-v1 handle_put";
-        //     "region_id" => self.region.get_id(),
-        //     "start_key" => log_wrappers::Value::key(self.region.get_start_key()),
-        //     "end_key"   => log_wrappers::Value::key(self.region.get_end_key()),
-        //     "key"       => log_wrappers::Value::key(key),
-        //     "value_len" => value.len(),
-        // );
+        info!(
+            "raftstore-v1 handle_put";
+            "region_id" => self.region.get_id(),
+            "start_key" => log_wrappers::Value::key(self.region.get_start_key()),
+            "end_key"   => log_wrappers::Value::key(self.region.get_end_key()),
+            "key"       => log_wrappers::Value::key(key),
+            "value_len" => value.len(),
+        );
 
         if let Some(s) = self.buckets.as_mut() {
             s.write_key(key, value.len() as u64);

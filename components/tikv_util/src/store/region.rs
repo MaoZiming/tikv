@@ -64,6 +64,7 @@ fn range_overlap(
     region_start: &[u8],
     region_end: &[u8],
 ) -> Option<(Vec<u8>, Vec<u8>)> {
+
     // overlap_start = max(guard_start, region_start) using compare_start_keys
     let overlap_start = match compare_start_keys(guard_start, region_start) {
         Ordering::Greater => guard_start,
@@ -75,6 +76,11 @@ fn range_overlap(
         Ordering::Greater => region_end,
         _ => guard_end,
     };
+
+    info!(
+        "range_overlap: guard_start: {:?}, guard_end: {:?}, region_start: {:?}, region_end: {:?}, overlap_start: {:?}, overlap_end: {:?}",
+        guard_start, guard_end, region_start, region_end, overlap_start, overlap_end,
+    );
 
     // Now check if overlap_start <= overlap_end in the sense of end-key comparison
     // (empty => +∞). If overlap_start > overlap_end, no valid overlap.
