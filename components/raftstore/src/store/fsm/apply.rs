@@ -21,6 +21,7 @@ use std::{
     usize,
     vec::Drain,
 };
+use txn_types::{self, Key};
 
 use batch_system::{
     BasicMailbox, BatchRouter, BatchSystem, Config as BatchSystemConfig, Fsm, HandleResult,
@@ -2682,14 +2683,42 @@ where
             } else {
                 info!("self.region {} has no guard value", self.region.get_id());
             }
-     
+
+            let old_start = Key::from_encoded(self.region.get_start_key().to_vec())
+                .to_raw()
+                .unwrap_or_else(|e| {
+                    error!("failed to decode region start key: {:?}, using new_region end key as fallback", e);
+                    new_region.get_end_key().to_vec()
+                });
+
+            let old_end = Key::from_encoded(self.region.get_end_key().to_vec())
+                .to_raw()
+                .unwrap_or_else(|e| {
+                    error!("failed to decode region end key: {:?}, using new_region end key as fallback", e);
+                    new_region.get_end_key().to_vec()
+                });
+
+            let new_start = Key::from_encoded(new_region.get_start_key().to_vec())
+                .to_raw()
+                .unwrap_or_else(|e| {
+                    error!("failed to decode new region start key: {:?}, using new_region end key as fallback", e);
+                    new_region.get_end_key().to_vec()
+                });
+
+            let new_end = Key::from_encoded(new_region.get_end_key().to_vec())
+                .to_raw()
+                .unwrap_or_else(|e| {
+                    error!("failed to decode new region end key: {:?}, using new_region end key as fallback", e);
+                    new_region.get_end_key().to_vec()
+                });
+
             handle_region_split(
-                self.region.get_id(), 
-                self.region.get_start_key(),
-                self.region.get_end_key(),
+                self.region.get_id(),
+                &old_start,
+                &old_end,
                 new_region.get_id(),
-                new_region.get_start_key(),
-                new_region.get_end_key() 
+                &new_start,
+                &new_end,
             );
 
             info!(

@@ -16,12 +16,6 @@ struct RangeGuard {
 
 // Globally accessible map: region_id -> vector of RangeGuard
 static REGION_TO_GUARD_MAP: Lazy<DashMap<u64, Vec<RangeGuard>>> = Lazy::new(DashMap::new);
-static KEY_TO_ENCODED: Lazy<DashMap<Vec<u8>, Vec<u8>>> = Lazy::new(|| {
-    let map = DashMap::new();
-    // Insert a mapping from an empty Vec to an empty Vec.
-    map.insert(Vec::new(), Vec::new());
-    map
-});
 
 /// Compare two start keys, where an empty key is treated as -∞.
 fn compare_start_keys(a: &[u8], b: &[u8]) -> Ordering {
@@ -259,7 +253,7 @@ pub fn handle_region_split(
     // Debug info
     info!(
         "handle_region_split: old_region_id={}, new_region_id={}, \
-         old_range=[{}, {}], new_range=[{}, {}]",
+        old_range=[{}, {}], new_range=[{}, {}]",
         old_region_id,
         new_region_id,
         hex::encode_upper(old_region_start_key),
@@ -287,38 +281,20 @@ pub fn handle_region_split(
     // let mut updated_old_guards = Vec::with_capacity(old_guards.len());
     // For each RangeGuard in old region, check if part of it belongs to the new region.
     for guard in old_guards.iter() {
-        // Try to get both encoded start and end bytes from the global map.
-        if let (Some(encoded_start_ref), Some(encoded_end_ref)) =
-            (KEY_TO_ENCODED.get(&guard.start_key), KEY_TO_ENCODED.get(&guard.end_key))
-        {
-            let start_bytes: &[u8] = encoded_start_ref.as_ref();
-            let end_bytes: &[u8] = encoded_end_ref.as_ref();
-
-            info!(
-                "Guard: raw start_key: {}, raw end_key: {}, encoded_start: {}, encoded_end: {}",
-                hex::encode_upper(&guard.start_key),
-                hex::encode_upper(&guard.end_key),
-                hex::encode_upper(start_bytes),
-                hex::encode_upper(end_bytes)
-            );
-
-            
-            if let Some((overlap_start, overlap_end)) = range_overlap(
-                start_bytes,
-                end_bytes,
-                &new_region_start_key,
-                &new_region_end_key,
-            ) {
-                // This means at least part of the guard belongs to the new region.
-                // We'll push a new RangeGuard for the new region.
-                let mut new_guard: RangeGuard = guard.clone();
-                new_guard.start_key = overlap_start;
-                new_guard.end_key = overlap_end;
-                new_guards.push(new_guard);
-            }
-        } else {
-            // Optionally handle the case where either the start or end key wasn't found.
-            info!("Encoded key for guard not found: {:?}", guard);
+        // If there's an overlap between guard and the new region's [start, end],
+        // we move (or copy) that overlapping part to new region.
+        if let Some((overlap_start, overlap_end)) = range_overlap(
+            &guard.start_key,
+            &guard.end_key,
+            &new_region_start_key,
+            &new_region_end_key,
+        ) {
+            // This means at least part of the guard belongs to the new region.
+            // We'll push a new RangeGuard for the new region.
+            let mut new_guard: RangeGuard = guard.clone();
+            new_guard.start_key = overlap_start.clone();
+            new_guard.end_key = overlap_end.clone();
+            new_guards.push(new_guard);
         }
     }
 
@@ -469,7 +445,7 @@ fn remove_overlaps(rg_vec: &mut Vec<RangeGuard>, main_idx: usize) {
 /// - If guard_value starts with "START_", sets a new or existing start_key.
 /// - If guard_value starts with "END_", sets the end_key for the most recently added or matched guard.
 /// - Otherwise, resets the entire region using `update_region_guard`.
-pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Vec<u8>, encoded_key: Vec<u8>) {
+pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Vec<u8>) {
     // print_region_guard_map();
     info!(
         "Updating region guard with key: region_id={}, guard_value={}, key={}",
@@ -477,8 +453,6 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
         guard_value,
         hex::encode_upper(&key)
     );
-
-    KEY_TO_ENCODED.insert(key.clone(), encoded_key.clone());
 
     let mut remove_overlap = true;
     if let Some(mut stripped_value) = guard_value.strip_prefix("START_") {
