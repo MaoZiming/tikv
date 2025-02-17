@@ -1367,12 +1367,12 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         guard_value,
         req.get_context().get_region_id()
     );
-    
+
     if !guard_value.is_empty() {
         update_region_guard_with_key(
             req.get_context().get_region_id(),
             guard_value.to_string(),
-            req.get_key().to_vec());
+            encoded_key.as_encoded().to_vec());
     }
 
     set_tls_tracker_token(tracker);
