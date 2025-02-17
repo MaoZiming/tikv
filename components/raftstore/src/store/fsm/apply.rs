@@ -1055,7 +1055,7 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        // update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -2674,8 +2674,8 @@ where
             new_region.set_peers(derived.get_peers().to_vec().into());
 
             // SPLIT: drop guard on all split region..
-            new_region.set_guard_value("default_guard".to_string());
-            self.region.set_guard_value("default_guard".to_string());
+            // new_region.set_guard_value("default_guard".to_string());
+            // self.region.set_guard_value("default_guard".to_string());
 
             if let Some(guard) = get_region_guard(self.region.get_id()) {
                 info!("self.region {} guard: {}", self.region.get_id(), guard);

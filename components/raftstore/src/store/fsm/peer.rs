@@ -331,7 +331,7 @@ where
 
         let mut region = metapb::Region::default();
         region.set_id(region_id);
-        region.set_guard_value("default_guard".to_string());
+        // region.set_guard_value("default_guard".to_string());
 
         info!(
             "Initialized Region: region_id={}, guard_value={}",
