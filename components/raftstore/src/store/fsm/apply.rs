@@ -2685,30 +2685,46 @@ where
             }
 
             let old_start = Key::from_encoded(self.region.get_start_key().to_vec())
-                .to_raw()
-                .unwrap_or_else(|e| {
-                    error!("failed to decode region start key: {:?}, using new_region end key as fallback", e);
-                    new_region.get_end_key().to_vec()
-                });
-
+            .to_raw()
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to decode region start key: {:?}, original key: {:?}, using self.region.get_start_key() as fallback",
+                    e,
+                    self.region.get_start_key().to_vec()
+                );
+                self.region.get_start_key().to_vec()
+            });
+        
             let old_end = Key::from_encoded(self.region.get_end_key().to_vec())
                 .to_raw()
                 .unwrap_or_else(|e| {
-                    error!("failed to decode region end key: {:?}, using new_region end key as fallback", e);
-                    new_region.get_end_key().to_vec()
+                    error!(
+                        "failed to decode region end key: {:?}, original key: {:?}, using self.region.get_end_key() as fallback",
+                        e,
+                        self.region.get_end_key().to_vec()
+                    );
+                    self.region.get_end_key().to_vec()
                 });
-
+            
             let new_start = Key::from_encoded(new_region.get_start_key().to_vec())
                 .to_raw()
                 .unwrap_or_else(|e| {
-                    error!("failed to decode new region start key: {:?}, using new_region end key as fallback", e);
-                    new_region.get_end_key().to_vec()
+                    error!(
+                        "failed to decode new region start key: {:?}, original key: {:?}, using new_region.get_start_key() as fallback",
+                        e,
+                        new_region.get_start_key().to_vec()
+                    );
+                    new_region.get_start_key().to_vec()
                 });
-
+            
             let new_end = Key::from_encoded(new_region.get_end_key().to_vec())
                 .to_raw()
                 .unwrap_or_else(|e| {
-                    error!("failed to decode new region end key: {:?}, using new_region end key as fallback", e);
+                    error!(
+                        "failed to decode new region end key: {:?}, original key: {:?}, using new_region.get_end_key() as fallback",
+                        e,
+                        new_region.get_end_key().to_vec()
+                    );
                     new_region.get_end_key().to_vec()
                 });
 
@@ -2761,8 +2777,29 @@ where
             derived.set_start_key(keys.pop_front().unwrap());
             regions.push(derived.clone());
         }
+        let derived_start = Key::from_encoded(derived.get_start_key().to_vec())
+        .to_raw()
+        .unwrap_or_else(|e| {
+            error!(
+                "failed to decode derived region start key: {:?}, original key: {:?}, using derived.get_start_key() as fallback",
+                e,
+                derived.get_start_key().to_vec()
+            );
+            derived.get_start_key().to_vec()
+        });
+        
+        let derived_end = Key::from_encoded(derived.get_end_key().to_vec())
+        .to_raw()
+        .unwrap_or_else(|e| {
+            error!(
+                "failed to decode derived region end key: {:?}, original key: {:?}, using derived.get_end_key() as fallback",
+                e,
+                derived.get_end_key().to_vec()
+            );
+            derived.get_end_key().to_vec()
+        });
 
-        filter_region_split(derived.get_id(), derived.get_start_key(), derived.get_end_key());
+        filter_region_split(derived.get_id(), &derived_start, &derived_end);
         info!(
             "filter_region_split: region_id={}, guard_value={}",
             derived.get_id(),
