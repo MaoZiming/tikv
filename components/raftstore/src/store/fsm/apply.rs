@@ -2694,7 +2694,8 @@ where
                 new_region.get_end_key() 
             );
             let new_region_guard = get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string());
-            new_region.set_guard_value(new_region_guard.clone());
+            new_region.set_guard_value("default_guard".to_string());
+            // new_region.set_guard_value(new_region_guard.clone());
 
             info!(
                 "handle_region_split: region_id={}, guard_value={}",
@@ -2702,15 +2703,16 @@ where
                 new_region_guard
             );
 
-            if let Some(guard) = get_region_guard(new_region.get_id()) {
-                info!("new_region {} guard: {}", self.region.get_id(), guard);
+            if let Some(guard) = get_region_guard(self.region.get_id()) {
+                info!("self.region {} guard: {}", self.region.get_id(), guard);
             } else {
-                info!("new_region {} has no guard value", self.region.get_id());
+                info!("self.region {} has no guard value", self.region.get_id());
             }
 
             if let Some(guard) = get_region_guard(new_region.get_id()) {
                 // new_region.set_guard_value(guard);
-                ;
+                info!("new_region {} guard: {}", new_region.get_id(), guard);
+
             } else {
                 info!("new_region has no guard value");
             }

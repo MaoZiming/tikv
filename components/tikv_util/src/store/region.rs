@@ -38,12 +38,12 @@ fn compare_end_keys(a: &[u8], b: &[u8]) -> Ordering {
 }
 
 /// Return true if key is in [range_start, range_end).
-fn key_in_range(key: &[u8], range_start: &[u8], range_end: &[u8]) -> bool {
-    // range_start <= key < range_end
-    // using specialized comparisons:
-    compare_start_keys(range_start, key) != Ordering::Greater
-        && compare_end_keys(key, range_end) == Ordering::Less
-}
+// fn key_in_range(key: &[u8], range_start: &[u8], range_end: &[u8]) -> bool {
+//     // range_start <= key < range_end
+//     // using specialized comparisons:
+//     compare_start_keys(range_start, key) != Ordering::Greater
+//         && compare_end_keys(key, range_end) == Ordering::Less
+// }
 
 
 /// Return `true` if the [guard_start, guard_end) range is entirely within [region_start, region_end).
@@ -311,8 +311,7 @@ pub fn handle_region_split(
 
     // Verification step: all new_region's guards must lie in [new_region_start_key, new_region_end_key).
     for guard in new_guards.iter() {
-        if !key_in_range(&guard.start_key, &new_region_start_key, &new_region_end_key)
-            || !key_in_range(&guard.end_key, &new_region_start_key, &new_region_end_key)
+        if !guard_in_region_range(guard, new_region_start_key, new_region_end_key)
         {
             info!(
                 "Warning: new_region_id={} has guard out of range => {:?}",
