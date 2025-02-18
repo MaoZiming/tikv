@@ -5404,7 +5404,12 @@ where
         // set current epoch
         send_msg.set_region_epoch(self.region().get_region_epoch().clone());
         send_msg.set_from_peer(self.peer.clone());
-        let guard_value = get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string());
+        let guard_value = if self.is_leader() {
+            get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
+        } else {
+            "None".to_string()
+        };
+        
         send_msg.set_guard_value(guard_value.clone());
     
         // Log the prepared Raft message details.
