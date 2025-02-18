@@ -639,7 +639,7 @@ where
 
                     let guard_value = msg.msg.get_guard_value();
                     let region_id = msg.msg.get_region_id();
-                    if guard_value != "None" {
+                    if !guard_value.is_empty() && guard_value != "None" {
                         info!(
                             "PeerFsmDelegate received raft message";
                             "region_id" => region_id,
