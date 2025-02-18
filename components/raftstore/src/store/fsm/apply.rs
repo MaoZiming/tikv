@@ -226,6 +226,7 @@ pub struct ChangePeer {
     // one element
     pub changes: Vec<ChangePeerRequest>,
     pub region: Region,
+    pub guard_value: String,
 }
 
 pub struct Range {
@@ -1576,8 +1577,8 @@ where
                     let region_id = self.region.get_id();
                     let region_guard = self.region.get_guard_value();
                     info!(
-                        "ExecResult::ChangePeer, region_id: {}, guard: {}",
-                        region_id, region_guard
+                        "ExecResult::ChangePeer, region_id: {}, guard: {}, guard_value: {}",
+                        region_id, region_guard, cp.guard_value
                     );
                     // set_region_guard_from_string(region_id, region_guard);
                 }
@@ -2373,7 +2374,8 @@ where
                 index: ctx.exec_log_index,
                 conf_change: Default::default(),
                 changes: vec![request.clone()],
-                region,
+                region: region,
+                guard_value: get_region_guard(self.region_id()).unwrap_or_else(|| "None".to_string())
             })),
         ))
     }
@@ -2416,8 +2418,9 @@ where
             ApplyResult::Res(ExecResult::ChangePeer(ChangePeer {
                 index: ctx.exec_log_index,
                 conf_change: Default::default(),
-                changes,
-                region,
+                changes: changes,
+                region: region,
+                guard_value: get_region_guard(self.region_id()).unwrap_or_else(|| "None".to_string()),
             })),
         ))
     }
