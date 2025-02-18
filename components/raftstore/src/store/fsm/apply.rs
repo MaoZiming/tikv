@@ -3039,14 +3039,64 @@ where
         // update_region_guard(self.region.get_id(), "default_guard".to_string());
 
 
-        // handle_region_merge(
-        //     source_region_id, 
-        //     source_region.get_start_key(),
-        //     source_region.get_end_key(),
-        //     self.region.get_id(),
-        //     self.region.get_start_key(),
-        //     self.region.get_end_key()
-        // );
+        
+        // Convert source region's start key.
+        let src_start = Key::from_encoded(source_region.get_start_key().to_vec())
+            .to_raw()
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to decode source region start key: {:?}, original key: {:?}, using source_region.get_start_key() as fallback",
+                    e,
+                    source_region.get_start_key().to_vec()
+                );
+                source_region.get_start_key().to_vec()
+            });
+
+        // Convert source region's end key.
+        let src_end = Key::from_encoded(source_region.get_end_key().to_vec())
+            .to_raw()
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to decode source region end key: {:?}, original key: {:?}, using source_region.get_end_key() as fallback",
+                    e,
+                    source_region.get_end_key().to_vec()
+                );
+                source_region.get_end_key().to_vec()
+            });
+
+        // Convert target region's (self.region) start key.
+        let tgt_start = Key::from_encoded(self.region.get_start_key().to_vec())
+            .to_raw()
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to decode target region start key: {:?}, original key: {:?}, using self.region.get_start_key() as fallback",
+                    e,
+                    self.region.get_start_key().to_vec()
+                );
+                self.region.get_start_key().to_vec()
+            });
+
+        // Convert target region's (self.region) end key.
+        let tgt_end = Key::from_encoded(self.region.get_end_key().to_vec())
+            .to_raw()
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to decode target region end key: {:?}, original key: {:?}, using self.region.get_end_key() as fallback",
+                    e,
+                    self.region.get_end_key().to_vec()
+                );
+                self.region.get_end_key().to_vec()
+            });
+
+        // Now call handle_region_merge with the raw keys.
+        handle_region_merge(
+            source_region_id,
+            &src_start,
+            &src_end,
+            self.region.get_id(),
+            &tgt_start,
+            &tgt_end,
+        );
 
         // No matter whether the source peer has applied to the required index,
         // it's a race to write apply state in both source delegate and target
