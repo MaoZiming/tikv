@@ -125,13 +125,13 @@ pub fn handle_region_merge(
         }
     };
 
-    // (Optional) Log a warning if the old region is not fully contained in the new region.
-    if compare_start_keys(old_region_start_key, new_region_start_key) == Ordering::Less
-        || compare_end_keys(old_region_end_key, new_region_end_key) == Ordering::Greater
-    {
-        info!("Old region is not fully contained in new region. Some guards may be out of range.");
-        return;
-    }
+    // // (Optional) Log a warning if the old region is not fully contained in the new region.
+    // if compare_start_keys(old_region_start_key, new_region_start_key) == Ordering::Less
+    //     || compare_end_keys(old_region_end_key, new_region_end_key) == Ordering::Greater
+    // {
+    //     info!("Old region is not fully contained in new region. Some guards may be out of range.");
+    //     return;
+    // }
 
     // 2) Build a list of only the guards that fall inside [new_region_start_key, new_region_end_key).
     let mut transferred_guards = Vec::new();
@@ -162,8 +162,8 @@ pub fn handle_region_merge(
     // 5) Final log / verification
     info!(
         "Merged old_region_id={} into new_region_id={}. \
-         Moved {} guards; skipped {} out-of-range guards. \
-         New region had {} => now has {} guards total.",
+        Moved {} guards; skipped {} out-of-range guards. \
+        New region had {} => now has {} guards total.",
         old_region_id,
         new_region_id,
         old_count - skipped_count,
