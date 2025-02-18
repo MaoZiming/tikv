@@ -3749,6 +3749,7 @@ pub struct Apply<C> {
     pub entries_size: usize,
     pub cbs: Vec<Proposal<C>>,
     pub bucket_meta: Option<Arc<BucketMeta>>,
+    pub guard_value: String,
 }
 
 impl<C: WriteCallback> Apply<C> {
@@ -3777,6 +3778,7 @@ impl<C: WriteCallback> Apply<C> {
             entries_size,
             cbs,
             bucket_meta: buckets,
+            guard_value: get_region_guard(region_id).unwrap_or_else(|| "None".to_string()),
         }
     }
 
@@ -4656,6 +4658,31 @@ where
 
             match msg {
                 Msg::Apply { start, mut apply } => {
+
+                    info!(
+                        "Apply message received: \
+                        peer_id={}, \
+                        region_id={}, \
+                        term={}, \
+                        commit_index={}, \
+                        commit_term={}, \
+                        entries_count={}, \
+                        entries_size={}, \
+                        cbs_count={}, \
+                        has_bucket_meta={}, \
+                        guard_value={}",
+                        apply.peer_id,
+                        apply.region_id,
+                        apply.term,
+                        apply.commit_index,
+                        apply.commit_term,
+                        apply.entries.len(),
+                        apply.entries_size,
+                        apply.cbs.len(),
+                        apply.bucket_meta.is_some(),
+                        apply.guard_value
+                    );
+
                     let apply_wait = start.saturating_elapsed();
                     apply_ctx.apply_wait.observe(apply_wait.as_secs_f64());
                     for tracker in apply
