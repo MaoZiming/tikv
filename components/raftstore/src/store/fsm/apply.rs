@@ -1056,7 +1056,27 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        // update_region_guard(reg.region.get_id(), reg.region.get_guard_value().to_string());
+        info!(
+            "from_registration";
+            "region_id" => reg.region.get_id(),
+            "peer_id" => reg.id,
+            "peer_term" => reg.term,
+            "applied_term" => reg.applied_term,
+            // For `apply_state`, you can choose to log just the index or the whole struct:
+            "apply_state_applied_index" => reg.apply_state.get_applied_index(),
+            "apply_state_truncated_index" => reg.apply_state.get_truncated_state().get_index(),
+            // Or if you want the entire struct (may be large):
+            //"apply_state" => ?reg.apply_state,
+            "pending_request_snapshots" => reg.pending_request_snapshot_count.load(Ordering::Relaxed),
+            "is_merging" => reg.is_merging,
+            "guard_string" => reg.guard_value,
+            "guard_value" => reg.region.get_guard_value(),
+            "start_key" => log_wrappers::Value::key(reg.region.get_start_key()),
+            "end_key" => log_wrappers::Value::key(reg.region.get_end_key()),
+            "region_epoch_version" => reg.region.get_region_epoch().get_version(),
+            "region_epoch_conf_ver" => reg.region.get_region_epoch().get_conf_ver(),
+        );
+
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
             peer: find_peer_by_id(&reg.region, reg.id).unwrap().clone(),
@@ -3808,6 +3828,7 @@ pub struct Registration {
     pub region: Region,
     pub pending_request_snapshot_count: Arc<AtomicUsize>,
     pub is_merging: bool,
+    pub guard_value: String,
     raft_engine: Box<dyn RaftEngineReadOnly>,
 }
 
@@ -3821,6 +3842,7 @@ impl Registration {
             region: peer.region().clone(),
             pending_request_snapshot_count: peer.pending_request_snapshot_count.clone(),
             is_merging: peer.pending_merge_state.is_some(),
+            guard_value: get_region_guard(peer.region().get_id()).unwrap_or_else(|| "None".to_string()),
             raft_engine: Box::new(peer.get_store().engines.raft.clone()),
         }
     }
