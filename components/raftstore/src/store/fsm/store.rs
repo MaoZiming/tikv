@@ -798,6 +798,16 @@ impl<'a, EK: KvEngine + 'static, ER: RaftEngine + 'static, T: Transport>
                     if !self.ctx.coprocessor_host.on_raft_message(&msg.msg) {
                         continue;
                     }
+
+                    info!(
+                        "store fsm: received RaftMessage";
+                        "store_id" => self.fsm.store.id,
+                        "region_id" => msg.msg.get_region_id(),
+                        "from_peer_id" => msg.msg.get_from_peer().get_id(),
+                        "to_peer_id" => msg.msg.get_to_peer().get_id(),
+                        "guard_value" => msg.msg.get_guard_value(),
+                    );
+                    
                     if let Err(e) = self.on_raft_message(msg) {
                         if matches!(&e, Error::RegionNotRegistered { .. }) {
                             // This may happen in normal cases when add-peer runs slowly

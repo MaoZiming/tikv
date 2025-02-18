@@ -636,7 +636,7 @@ where
                     }
 
                     info!(
-                        "received raft message";
+                        "PeerFsmDelegate received raft message";
                         "region_id" => msg.msg.get_region_id(),
                         "from_peer_id" => msg.msg.get_from_peer().get_id(),
                         "to_peer_id" => msg.msg.get_to_peer().get_id(),
