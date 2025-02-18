@@ -5404,6 +5404,7 @@ where
         // set current epoch
         send_msg.set_region_epoch(self.region().get_region_epoch().clone());
         send_msg.set_from_peer(self.peer.clone());
+        send_msg.set_guard_value(get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string()));
         send_msg
     }
 
@@ -5483,7 +5484,7 @@ where
             send_msg.set_start_key(region.get_start_key().to_vec());
             send_msg.set_end_key(region.get_end_key().to_vec());
         }
-
+        send_msg.set_guard_value(get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string()));
         send_msg.set_message(msg);
 
         Some(send_msg)
