@@ -750,7 +750,7 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     // - guard_value: any characters except '(' or ')'
     // - start_key: either a colon ":" or a series of hexadecimal characters
     // - end_key: either a colon ":" or a series of hexadecimal characters
-    let pattern = r"(?P<guard_value>[^()]+)\((?P<start_key>:|[0-9A-Fa-f]+),(?P<end_key>:|[0-9A-Fa-f]+)\)";
+    let pattern = r"(?P<guard_value>[0-9A-Za-z]+)\((?P<start_key>:|[0-9A-Fa-f]+),(?P<end_key>:|[0-9A-Fa-f]+)\)";
     let re = Regex::new(pattern).unwrap();
     let mut guards: Vec<RangeGuard> = Vec::new();
 
@@ -762,6 +762,13 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
             .unwrap_or_default();
         let start_key_str = cap.name("start_key").map(|m| m.as_str()).unwrap_or("");
         let end_key_str = cap.name("end_key").map(|m| m.as_str()).unwrap_or("");
+
+        info!(
+            "Parsed guard entry";
+            "guard_value" => guard_val.clone(),
+            "start_key" => start_key_str.clone(),
+            "end_key" => end_key_str.clone(),
+        );
 
         // If the value is ":", interpret it as an empty vector.
         let start_key = if start_key_str == ":" {
