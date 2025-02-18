@@ -5,6 +5,7 @@ use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use hex;
 use std::cmp::Ordering;
+use regex::Regex;
 
 // Each range in a region will have a start key, end key, and a guard_value
 #[derive(Clone, Debug)]
@@ -730,8 +731,7 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 /// The expected format for each guard is: `guard_value(start_key_hex,end_key_hex)`.
 /// If the start or end key is empty, it is represented by a colon (`:`).
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
-
-    info!("set_region_guard_from_string: {:?}", guard_value);
+    info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
 
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {
@@ -739,70 +739,71 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
         return;
     }
 
+    // If the guard string doesn't contain a '(', then it's just a simple string.
     if !guard_value.contains('(') {
         update_region_guard(region_id, guard_value);
         return;
     }
 
-    // Split the string by commas to get individual guard entries.
-    let guards: Vec<RangeGuard> = guard_value
-        .split(',')
-        .filter_map(|entry| {
-            let entry = entry.trim();
-            if entry.is_empty() {
-                return None;
-            }
-            // Find the positions of '(' and ')'
-            let open_paren_index = entry.find('(')?;
-            let close_paren_index = entry.rfind(')')?;
-            if close_paren_index <= open_paren_index {
-                warn!("Malformed guard entry (parenthesis mismatch): {}", entry);
-                return None;
-            }
-            // The part before '(' is the guard value.
-            let guard_val = entry[..open_paren_index].to_string();
-            // The content within parentheses should have two comma-separated parts.
-            let inside = &entry[open_paren_index + 1..close_paren_index];
-            let parts: Vec<&str> = inside.split(',').map(|s| s.trim()).collect();
-            if parts.len() != 2 {
-                warn!("Malformed guard entry (expected two parts): {}", entry);
-                return None;
-            }
-            // Decode start_key: if it's ":" then it's empty, otherwise decode hex.
-            let start_key = if parts[0] == ":" {
-                Vec::new()
-            } else {
-                match hex::decode(parts[0]) {
-                    Ok(val) => val,
-                    Err(e) => {
-                        warn!("Failed to decode start key in guard entry {}: {}", entry, e);
-                        return None;
-                    }
-                }
-            };
-            // Decode end_key: if it's ":" then it's empty, otherwise decode hex.
-            let end_key = if parts[1] == ":" {
-                Vec::new()
-            } else {
-                match hex::decode(parts[1]) {
-                    Ok(val) => val,
-                    Err(e) => {
-                        warn!("Failed to decode end key in guard entry {}: {}", entry, e);
-                        return None;
-                    }
-                }
-            };
+    // Use a regex to capture each guard entry.
+    // The pattern captures:
+    // - guard_value: any characters except '(' or ')'
+    // - start_key: either a colon ":" or a series of hexadecimal characters
+    // - end_key: either a colon ":" or a series of hexadecimal characters
+    let pattern = r"(?P<guard_value>[^()]+)\((?P<start_key>:|[0-9A-Fa-f]+),(?P<end_key>:|[0-9A-Fa-f]+)\)";
+    let re = Regex::new(pattern).unwrap();
+    let mut guards: Vec<RangeGuard> = Vec::new();
 
-            Some(RangeGuard {
-                guard_value: guard_val,
-                start_key,
-                end_key,
-            })
-        })
-        .collect();
+    // Iterate over all matches.
+    for cap in re.captures_iter(&guard_value) {
+        let guard_val = cap
+            .name("guard_value")
+            .map(|m| m.as_str().trim().to_string())
+            .unwrap_or_default();
+        let start_key_str = cap.name("start_key").map(|m| m.as_str()).unwrap_or("");
+        let end_key_str = cap.name("end_key").map(|m| m.as_str()).unwrap_or("");
+
+        // If the value is ":", interpret it as an empty vector.
+        let start_key = if start_key_str == ":" {
+            Vec::new()
+        } else {
+            match hex::decode(start_key_str) {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("Failed to decode start key '{}' in guard entry {}: {}", start_key_str, guard_val, e);
+                    continue;
+                }
+            }
+        };
+
+        let end_key = if end_key_str == ":" {
+            Vec::new()
+        } else {
+            match hex::decode(end_key_str) {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("Failed to decode end key '{}' in guard entry {}: {}", end_key_str, guard_val, e);
+                    continue;
+                }
+            }
+        };
+
+        guards.push(RangeGuard {
+            guard_value: guard_val,
+            start_key,
+            end_key,
+        });
+    }
 
     // Insert (or update) the parsed list into the global map.
-    REGION_TO_GUARD_MAP.insert(region_id, guards);
+    REGION_TO_GUARD_MAP.insert(region_id, guards.clone());
+
+    info!(
+        "Inserted region guard mapping";
+        "region_id" => region_id,
+        "guards" => ?guards
+    );
+
 }
 
 /// Check if key in region range (`start_key`, `end_key`).
