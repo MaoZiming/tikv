@@ -5379,12 +5379,13 @@ where
 
         if let Some(guard_value_from_store) = get_region_guard(region_id) {
             guard_value = guard_value_from_store;
+            info!(
+                "heartbeat_pd Task Created: region_id={}, guard_value={}",
+                region_id, guard_value
+            );
         }
 
-        info!(
-            "heartbeat_pd Task Created: region_id={}, guard_value={}",
-            region_id, guard_value
-        );
+
 
         if let Err(e) = ctx.pd_scheduler.schedule(task) {
             error!(

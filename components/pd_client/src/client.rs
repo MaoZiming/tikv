@@ -687,15 +687,16 @@ impl PdClient for RpcClient {
 
         if let Some(guard_value_from_store) = get_region_guard(region.get_id()) {
             guard_value = guard_value_from_store;
+        
+            info!(
+                "Sending Region Heartbeat: region_id={}, guard_value={}, region: {}:{}",
+                region.get_id(),
+                guard_value,
+                hex::encode_upper(region.get_start_key()),
+                hex::encode_upper(region.get_end_key()),
+            );
         }
 
-        info!(
-            "Sending Region Heartbeat: region_id={}, guard_value={}, region: {}:{}",
-            region.get_id(),
-            guard_value,
-            hex::encode_upper(region.get_start_key()),
-            hex::encode_upper(region.get_end_key()),
-        );
 
         req.set_term(term);
         req.set_header(self.header());
