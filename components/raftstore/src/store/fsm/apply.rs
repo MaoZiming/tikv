@@ -1907,14 +1907,14 @@ where
         // region key range has no data prefix, so we must use origin key to check.
         util::check_key_in_region(key, &self.region)?;
 
-        info!(
-            "raftstore-v1 handle_put";
-            "region_id" => self.region.get_id(),
-            "start_key" => log_wrappers::Value::key(self.region.get_start_key()),
-            "end_key"   => log_wrappers::Value::key(self.region.get_end_key()),
-            "key"       => log_wrappers::Value::key(key),
-            "value_len" => value.len(),
-        );
+        // info!(
+        //     "raftstore-v1 handle_put";
+        //     "region_id" => self.region.get_id(),
+        //     "start_key" => log_wrappers::Value::key(self.region.get_start_key()),
+        //     "end_key"   => log_wrappers::Value::key(self.region.get_end_key()),
+        //     "key"       => log_wrappers::Value::key(key),
+        //     "value_len" => value.len(),
+        // );
 
         if let Some(s) = self.buckets.as_mut() {
             s.write_key(key, value.len() as u64);
@@ -4662,29 +4662,29 @@ where
             match msg {
                 Msg::Apply { start, mut apply } => {
 
-                    info!(
-                        "Apply message received: \
-                        peer_id={}, \
-                        region_id={}, \
-                        term={}, \
-                        commit_index={}, \
-                        commit_term={}, \
-                        entries_count={}, \
-                        entries_size={}, \
-                        cbs_count={}, \
-                        has_bucket_meta={}, \
-                        guard_value={}",
-                        apply.peer_id,
-                        apply.region_id,
-                        apply.term,
-                        apply.commit_index,
-                        apply.commit_term,
-                        apply.entries.len(),
-                        apply.entries_size,
-                        apply.cbs.len(),
-                        apply.bucket_meta.is_some(),
-                        apply.guard_value
-                    );
+                    // info!(
+                    //     "Apply message received: \
+                    //     peer_id={}, \
+                    //     region_id={}, \
+                    //     term={}, \
+                    //     commit_index={}, \
+                    //     commit_term={}, \
+                    //     entries_count={}, \
+                    //     entries_size={}, \
+                    //     cbs_count={}, \
+                    //     has_bucket_meta={}, \
+                    //     guard_value={}",
+                    //     apply.peer_id,
+                    //     apply.region_id,
+                    //     apply.term,
+                    //     apply.commit_index,
+                    //     apply.commit_term,
+                    //     apply.entries.len(),
+                    //     apply.entries_size,
+                    //     apply.cbs.len(),
+                    //     apply.bucket_meta.is_some(),
+                    //     apply.guard_value
+                    // );
 
                     let apply_wait = start.saturating_elapsed();
                     apply_ctx.apply_wait.observe(apply_wait.as_secs_f64());

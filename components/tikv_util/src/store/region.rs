@@ -713,14 +713,14 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
                 .collect::<Vec<_>>()
                 .join(",");
 
-            info!(
-                "Retrieved all guard values for region_id={}: {}",
-                region_id, all_guards
-            );
+            // info!(
+            //     "Retrieved all guard values for region_id={}: {}",
+            //     region_id, all_guards
+            // );
             Some(all_guards)
         }
         None => {
-            warn!("Region {} not found in REGION_TO_GUARD_MAP", region_id);
+            // warn!("Region {} not found in REGION_TO_GUARD_MAP", region_id);
             None
         }
     }
@@ -763,12 +763,12 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
         let start_key_str = cap.name("start_key").map(|m| m.as_str()).unwrap_or("");
         let end_key_str = cap.name("end_key").map(|m| m.as_str()).unwrap_or("");
 
-        info!(
-            "Parsed guard entry";
-            "guard_value" => guard_val.clone(),
-            "start_key" => start_key_str.clone(),
-            "end_key" => end_key_str.clone(),
-        );
+        // info!(
+        //     "Parsed guard entry";
+        //     "guard_value" => guard_val.clone(),
+        //     "start_key" => start_key_str.clone(),
+        //     "end_key" => end_key_str.clone(),
+        // );
 
         // If the value is ":", interpret it as an empty vector.
         let start_key = if start_key_str == ":" {
