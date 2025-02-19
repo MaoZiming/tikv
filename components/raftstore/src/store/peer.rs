@@ -5413,13 +5413,15 @@ where
         send_msg.set_guard_value(guard_value.clone());
     
         // Log the prepared Raft message details.
-        info!(
-            "prepare_raft_message";
-            "peer_id" => self.peer.get_id(),
-            "region_id" => self.region_id,
-            "guard_value" => guard_value,
-            "role" => if self.is_leader() { "leader" } else { "follower" },
-        );
+        if guard_value != "None" {
+            info!(
+                "prepare_raft_message";
+                "peer_id" => self.peer.get_id(),
+                "region_id" => self.region_id,
+                "guard_value" => guard_value,
+                "role" => if self.is_leader() { "leader" } else { "follower" },
+            );
+        }
     
         send_msg
     }
@@ -5508,13 +5510,15 @@ where
         };
 
         send_msg.set_guard_value(guard_value.clone());
-        info!(
-            "build_raft_message";
-            "peer_id" => self.peer.get_id(),
-            "region_id" => self.region_id,
-            "guard_value" => guard_value,
-            "role" => if self.is_leader() { "leader" } else { "follower" },
-        );
+        if guard_value != "None" {
+            info!(
+                "build_raft_message";
+                "peer_id" => self.peer.get_id(),
+                "region_id" => self.region_id,
+                "guard_value" => guard_value,
+                "role" => if self.is_leader() { "leader" } else { "follower" },
+            );
+        }
 
         send_msg.set_message(msg);
 
