@@ -654,7 +654,8 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
             //     region_id,
             //     hex::encode_upper(key)
             // );
-            return None;
+            // return None;
+            return Some("default-guard".to_string());
         }
     };
 
