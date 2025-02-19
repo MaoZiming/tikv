@@ -399,7 +399,7 @@ pub fn update_region_guard(region_id: u64, guard_value: String) {
         "Finished updating region guard (entire region): region_id={}, guard_value={}",
         region_id, guard_value
     );
-    print_region_guard_map();
+    // print_region_guard_map();
 }
 
 /// Returns true if the two RangeGuards [start, end) overlap.
@@ -638,7 +638,7 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
         region_id,
         hex::encode_upper(key)
     );
-    print_region_guard_map();
+    // print_region_guard_map();
 
     // Read access is also concurrency-safe; we get a read lock for region_id.
     let rg_vec = match REGION_TO_GUARD_MAP.get(&region_id) {

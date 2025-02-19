@@ -585,11 +585,11 @@ impl<K: PrewriteKind> Prewriter<K> {
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
 
         let key = &self.primary;
-        info!("Prewrite in commands!! - GuardValue: {:?}, key: {:?}, region-id: {:?}", self.guard_value, key, self.ctx.get_region_id());
+        // info!("Prewrite in commands!! - GuardValue: {:?}, key: {:?}, region-id: {:?}", self.guard_value, key, self.ctx.get_region_id());
         // Call `query_region`
         if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), key) {
-            info!("Region guard: {:?}", guard_value);
-            info!("self.guard_value: {:?}", self.guard_value);
+            // info!("Region guard: {:?}", guard_value);
+            // info!("self.guard_value: {:?}", self.guard_value);
 
             if !self.guard_value.is_empty()
             && self.guard_value != "default-prewrite"
@@ -609,13 +609,13 @@ impl<K: PrewriteKind> Prewriter<K> {
                     guard_value
                 ))));
             } else {
-                info!(
-                    "Prewrite Keys in Region {}", self.ctx.get_region_id();
-                );
+                // info!(
+                //     "Prewrite Keys in Region {}", self.ctx.get_region_id();
+                // );
             }
             // Use the region metadata as needed in your prewrite logic
         } else {
-            info!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
+            // info!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
