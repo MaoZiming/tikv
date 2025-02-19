@@ -2375,7 +2375,7 @@ where
                 conf_change: Default::default(),
                 changes: vec![request.clone()],
                 region: region,
-                guard_value: get_region_guard(self.region_id()).unwrap_or_else(|| "None".to_string())
+                guard_value: "None".to_string()
             })),
         ))
     }
@@ -2420,7 +2420,7 @@ where
                 conf_change: Default::default(),
                 changes: changes,
                 region: region,
-                guard_value: get_region_guard(self.region_id()).unwrap_or_else(|| "None".to_string()),
+                guard_value: "None".to_string(),
             })),
         ))
     }
@@ -2701,11 +2701,11 @@ where
             // new_region.set_guard_value("default_guard".to_string());
             // self.region.set_guard_value("default_guard".to_string());
 
-            if let Some(guard) = get_region_guard(self.region.get_id()) {
-                info!("self.region {} guard: {}", self.region.get_id(), guard);
-            } else {
-                info!("self.region {} has no guard value", self.region.get_id());
-            }
+            // if let Some(guard) = get_region_guard(self.region.get_id()) {
+            //     info!("self.region {} guard: {}", self.region.get_id(), guard);
+            // } else {
+            //     info!("self.region {} has no guard value", self.region.get_id());
+            // }
 
             let old_start = Key::from_encoded(self.region.get_start_key().to_vec())
             .to_raw()
@@ -2760,24 +2760,24 @@ where
                 &new_end,
             );
 
-            info!(
-                "handle_region_split: region_id={}, guard_value={}",
-                new_region.get_id(),
-                get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string())
-            );
+            // info!(
+            //     "handle_region_split: region_id={}, guard_value={}",
+            //     new_region.get_id(),
+            //     get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string())
+            // );
 
-            if let Some(guard) = get_region_guard(self.region.get_id()) {
-                info!("self.region {} guard: {}", self.region.get_id(), guard);
-            } else {
-                info!("self.region {} has no guard value", self.region.get_id());
-            }
+            // if let Some(guard) = get_region_guard(self.region.get_id()) {
+            //     info!("self.region {} guard: {}", self.region.get_id(), guard);
+            // } else {
+            //     info!("self.region {} has no guard value", self.region.get_id());
+            // }
 
-            if let Some(guard) = get_region_guard(new_region.get_id()) {
-                info!("new_region {} guard: {}", new_region.get_id(), guard);
+            // if let Some(guard) = get_region_guard(new_region.get_id()) {
+            //     info!("new_region {} guard: {}", new_region.get_id(), guard);
 
-            } else {
-                info!("new_region has no guard value");
-            }
+            // } else {
+            //     info!("new_region has no guard value");
+            // }
 
             for (peer, peer_id) in new_region
                 .mut_peers()
@@ -2823,11 +2823,11 @@ where
         });
 
         filter_region_split(derived.get_id(), &derived_start, &derived_end);
-        info!(
-            "filter_region_split: region_id={}, guard_value={}",
-            derived.get_id(),
-            get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
-        );
+        // info!(
+        //     "filter_region_split: region_id={}, guard_value={}",
+        //     derived.get_id(),
+        //     get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
+        // );
         // derived.set_guard_value("default_guard".to_string());
 
         // Generally, a peer is created in pending_create_peers when it is
@@ -3781,7 +3781,7 @@ impl<C: WriteCallback> Apply<C> {
             entries_size,
             cbs,
             bucket_meta: buckets,
-            guard_value: get_region_guard(region_id).unwrap_or_else(|| "None".to_string()),
+            guard_value: "None".to_string(),
         }
     }
 
@@ -3847,7 +3847,7 @@ impl Registration {
             region: peer.region().clone(),
             pending_request_snapshot_count: peer.pending_request_snapshot_count.clone(),
             is_merging: peer.pending_merge_state.is_some(),
-            guard_value: get_region_guard(peer.region().get_id()).unwrap_or_else(|| "None".to_string()),
+            guard_value: "None".to_string(),
             raft_engine: Box::new(peer.get_store().engines.raft.clone()),
         }
     }
