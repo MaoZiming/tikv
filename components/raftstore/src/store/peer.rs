@@ -5405,8 +5405,8 @@ where
         send_msg.set_region_epoch(self.region().get_region_epoch().clone());
         send_msg.set_from_peer(self.peer.clone());
         let guard_value = if self.is_leader() {
-            // get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
-            "None".to_string()
+            get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
+            // "None".to_string()
         } else {
             "None".to_string()
         };
@@ -5505,8 +5505,8 @@ where
         }
 
         let guard_value = if self.is_leader() {
-            // get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
-            "None".to_string()
+            get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
+            // "None".to_string()
         } else {
             "None".to_string()
         };
