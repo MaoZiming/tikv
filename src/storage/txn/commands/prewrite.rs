@@ -615,6 +615,15 @@ impl<K: PrewriteKind> Prewriter<K> {
             }
             // Use the region metadata as needed in your prewrite logic
         } else {
+            if !self.guard_value.is_empty()
+            && self.guard_value != "default-prewrite" 
+            {
+                return Err(Error::from(ErrorInner::Other(box_err!(
+                    "Delayed Writes! GuardValue mismatch for Region {}. Expected: {}, Found: NONE",
+                    self.ctx.get_region_id(),
+                    self.guard_value
+                ))));
+            }
             // info!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
         }
 
