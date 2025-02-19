@@ -738,10 +738,6 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
 
-    if get_region_guard(region_id).unwrap_or_else(|| "".to_string()) == guard_value {
-        return;
-    }
-
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {
         REGION_TO_GUARD_MAP.remove(&region_id);

@@ -2751,14 +2751,14 @@ where
                     new_region.get_end_key().to_vec()
                 });
 
-            handle_region_split(
-                self.region.get_id(),
-                &old_start,
-                &old_end,
-                new_region.get_id(),
-                &new_start,
-                &new_end,
-            );
+            // handle_region_split(
+            //     self.region.get_id(),
+            //     &old_start,
+            //     &old_end,
+            //     new_region.get_id(),
+            //     &new_start,
+            //     &new_end,
+            // );
 
             // info!(
             //     "handle_region_split: region_id={}, guard_value={}",
@@ -2822,7 +2822,7 @@ where
             derived.get_end_key().to_vec()
         });
 
-        filter_region_split(derived.get_id(), &derived_start, &derived_end);
+        // filter_region_split(derived.get_id(), &derived_start, &derived_end);
         // info!(
         //     "filter_region_split: region_id={}, guard_value={}",
         //     derived.get_id(),
