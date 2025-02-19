@@ -17,6 +17,11 @@ struct RangeGuard {
 
 // Globally accessible map: region_id -> vector of RangeGuard
 static REGION_TO_GUARD_MAP: Lazy<DashMap<u64, Vec<RangeGuard>>> = Lazy::new(DashMap::new);
+// Precompile the regex pattern once.
+static GUARD_REGEX: Lazy<Regex> = Lazy::new(|| {
+    // guard_value must be alphanumeric, start_key and end_key are either ":" or hexadecimal.
+    Regex::new(r"(?P<guard_value>[0-9A-Za-z]+)\((?P<start_key>:|[0-9A-Fa-f]+),(?P<end_key>:|[0-9A-Fa-f]+)\)").unwrap()
+});
 
 /// Compare two start keys, where an empty key is treated as -∞.
 fn compare_start_keys(a: &[u8], b: &[u8]) -> Ordering {
@@ -732,7 +737,10 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 /// If the start or end key is empty, it is represented by a colon (`:`).
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
-    return;
+
+    if get_region_guard(region_id).unwrap_or_else(|| "".to_string()) == guard_value {
+        return;
+    }
 
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {
@@ -746,17 +754,10 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
         return;
     }
 
-    // Use a regex to capture each guard entry.
-    // The pattern captures:
-    // - guard_value: any characters except '(' or ')'
-    // - start_key: either a colon ":" or a series of hexadecimal characters
-    // - end_key: either a colon ":" or a series of hexadecimal characters
-    let pattern = r"(?P<guard_value>[0-9A-Za-z]+)\((?P<start_key>:|[0-9A-Fa-f]+),(?P<end_key>:|[0-9A-Fa-f]+)\)";
-    let re = Regex::new(pattern).unwrap();
     let mut guards: Vec<RangeGuard> = Vec::new();
 
     // Iterate over all matches.
-    for cap in re.captures_iter(&guard_value) {
+    for cap in GUARD_REGEX.captures_iter(&guard_value) {
         let guard_val = cap
             .name("guard_value")
             .map(|m| m.as_str().trim().to_string())
@@ -804,7 +805,7 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     }
 
     // Insert (or update) the parsed list into the global map.
-    REGION_TO_GUARD_MAP.insert(region_id, guards.clone());
+    REGION_TO_GUARD_MAP.insert(region_id, guards);
 
     // info!(
     //     "Inserted region guard mapping";
