@@ -633,22 +633,22 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
 
 /// Retrieve the guard_value covering a given `key` in a particular `region_id`.
 pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
-    info!(
-        "get_region_guard_for_key, region_id={}, key={}",
-        region_id,
-        hex::encode_upper(key)
-    );
+    // info!(
+    //     "get_region_guard_for_key, region_id={}, key={}",
+    //     region_id,
+    //     hex::encode_upper(key)
+    // );
     // print_region_guard_map();
 
     // Read access is also concurrency-safe; we get a read lock for region_id.
     let rg_vec = match REGION_TO_GUARD_MAP.get(&region_id) {
         Some(r) => r,
         None => {
-            warn!(
-                "Region {} not found in REGION_TO_GUARD_MAP, key={}",
-                region_id,
-                hex::encode_upper(key)
-            );
+            // warn!(
+            //     "Region {} not found in REGION_TO_GUARD_MAP, key={}",
+            //     region_id,
+            //     hex::encode_upper(key)
+            // );
             return None;
         }
     };
@@ -732,6 +732,7 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 /// If the start or end key is empty, it is represented by a colon (`:`).
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
+    return;
 
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {
@@ -805,11 +806,11 @@ pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
     // Insert (or update) the parsed list into the global map.
     REGION_TO_GUARD_MAP.insert(region_id, guards.clone());
 
-    info!(
-        "Inserted region guard mapping";
-        "region_id" => region_id,
-        "guards" => ?guards
-    );
+    // info!(
+    //     "Inserted region guard mapping";
+    //     "region_id" => region_id,
+    //     "guards" => ?guards
+    // );
 
 }
 

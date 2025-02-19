@@ -46,7 +46,7 @@ pub fn prewrite<S: Snapshot>(
     let mut mutation =
         PrewriteMutation::from_mutation(mutation, secondary_keys, pessimistic_action, txn_props)?;
 
-    info!("Prewrite in actions: key = {}", log_wrappers::Value::key(mutation.key.as_encoded()));
+    // info!("Prewrite in actions: key = {}", log_wrappers::Value::key(mutation.key.as_encoded()));
     
     // Update max_ts for Insert operation to guarantee linearizability and snapshot
     // isolation

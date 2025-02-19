@@ -1057,26 +1057,26 @@ where
     EK: KvEngine,
 {
     fn from_registration(reg: Registration) -> ApplyDelegate<EK> {
-        info!(
-            "from_registration";
-            "region_id" => reg.region.get_id(),
-            "peer_id" => reg.id,
-            "peer_term" => reg.term,
-            "applied_term" => reg.applied_term,
-            // For `apply_state`, you can choose to log just the index or the whole struct:
-            "apply_state_applied_index" => reg.apply_state.get_applied_index(),
-            "apply_state_truncated_index" => reg.apply_state.get_truncated_state().get_index(),
-            // Or if you want the entire struct (may be large):
-            //"apply_state" => ?reg.apply_state,
-            "pending_request_snapshots" => reg.pending_request_snapshot_count.load(Ordering::Relaxed),
-            "is_merging" => reg.is_merging,
-            "guard_string" => reg.guard_value,
-            "guard_value" => reg.region.get_guard_value(),
-            "start_key" => log_wrappers::Value::key(reg.region.get_start_key()),
-            "end_key" => log_wrappers::Value::key(reg.region.get_end_key()),
-            "region_epoch_version" => reg.region.get_region_epoch().get_version(),
-            "region_epoch_conf_ver" => reg.region.get_region_epoch().get_conf_ver(),
-        );
+        // info!(
+        //     "from_registration";
+        //     "region_id" => reg.region.get_id(),
+        //     "peer_id" => reg.id,
+        //     "peer_term" => reg.term,
+        //     "applied_term" => reg.applied_term,
+        //     // For `apply_state`, you can choose to log just the index or the whole struct:
+        //     "apply_state_applied_index" => reg.apply_state.get_applied_index(),
+        //     "apply_state_truncated_index" => reg.apply_state.get_truncated_state().get_index(),
+        //     // Or if you want the entire struct (may be large):
+        //     //"apply_state" => ?reg.apply_state,
+        //     "pending_request_snapshots" => reg.pending_request_snapshot_count.load(Ordering::Relaxed),
+        //     "is_merging" => reg.is_merging,
+        //     "guard_string" => reg.guard_value,
+        //     "guard_value" => reg.region.get_guard_value(),
+        //     "start_key" => log_wrappers::Value::key(reg.region.get_start_key()),
+        //     "end_key" => log_wrappers::Value::key(reg.region.get_end_key()),
+        //     "region_epoch_version" => reg.region.get_region_epoch().get_version(),
+        //     "region_epoch_conf_ver" => reg.region.get_region_epoch().get_conf_ver(),
+        // );
 
         ApplyDelegate {
             tag: format!("[region {}] {}", reg.region.get_id(), reg.id),
