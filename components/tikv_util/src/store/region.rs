@@ -286,39 +286,20 @@ pub fn handle_region_split(
     // We'll build a new list of old_region's guards after we handle splitting.
     // let mut updated_old_guards = Vec::with_capacity(old_guards.len());
     // For each RangeGuard in old region, check if part of it belongs to the new region.
-    for guard in old_guards.iter() {
-        // If there's an overlap between guard and the new region's [start, end],
-        // we move (or copy) that overlapping part to new region.
-        if let Some((overlap_start, overlap_end)) = range_overlap(
+    // For each guard in the old region, check for overlap and create a new guard if applicable.
+    new_guards.extend(old_guards.iter().filter_map(|guard| {
+        range_overlap(
             &guard.start_key,
             &guard.end_key,
-            &new_region_start_key,
-            &new_region_end_key,
-        ) {
-            // This means at least part of the guard belongs to the new region.
-            // We'll push a new RangeGuard for the new region.
-            let mut new_guard: RangeGuard = guard.clone();
-            new_guard.start_key = overlap_start.clone();
-            new_guard.end_key = overlap_end.clone();
-            new_guards.push(new_guard);
-        }
-    }
-
-    // Replace old region's guards with the updated list.
-    // *old_guards = updated_old_guards;
-
-
-    // Verification step: all old_region's guards must lie in [old_region_start_key, old_region_end_key).
-    // for guard in old_guards.iter() {
-    //     if !key_in_range(&guard.start_key, &old_region_start_key, &old_region_end_key)
-    //         || !key_in_range(&guard.end_key, &old_region_start_key, &old_region_end_key)
-    //     {
-    //         info!(
-    //             "Warning: old_region_id={} has guard out of range => {:?}",
-    //             old_region_id, guard
-    //         );
-    //     }
-    // }
+            new_region_start_key,
+            new_region_end_key,
+        )
+        .map(|(overlap_start, overlap_end)| RangeGuard {
+            guard_value: guard.guard_value.clone(),
+            start_key: overlap_start,
+            end_key: overlap_end,
+        })
+    }));
 
     // Verification step: all new_region's guards must lie in [new_region_start_key, new_region_end_key).
     for guard in new_guards.iter() {
