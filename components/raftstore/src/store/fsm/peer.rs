@@ -647,7 +647,7 @@ where
                             "to_peer_id" => msg.msg.get_to_peer().get_id(),
                             "guard_value" => guard_value,
                         );
-                        // set_region_guard_from_string(region_id, guard_value.to_string());
+                        set_region_guard_from_string(region_id, guard_value.to_string());
                     }
                 
                     if !self.ctx.coprocessor_host.on_raft_message(&msg.msg) {
