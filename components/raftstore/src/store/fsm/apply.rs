@@ -72,7 +72,7 @@ use tikv_util::{
 use time::Timespec;
 use tracker::GLOBAL_TRACKERS;
 use uuid::Builder as UuidBuilder;
-use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_merge, filter_region_split};
+use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_split_with_old_guards, handle_region_merge, filter_region_split, REGION_TO_GUARD_MAP};
 use self::memtrace::*;
 use super::metrics::*;
 use crate::{
@@ -2688,6 +2688,19 @@ where
         }
 
         // Init split regions' meta info
+    
+        let old_region_id = self.region.get_id();
+        let old_guards = match REGION_TO_GUARD_MAP.get(&old_region_id) {
+            Some(guard_vec) => guard_vec.clone(),
+            None => {
+                info!(
+                    "No RangeGuards found for old_region_id={}, nothing to split.",
+                    old_region_id
+                );
+                Vec::new()
+            }
+        };
+
         let mut new_split_regions: HashMap<u64, NewSplitPeer> = HashMap::default();
         for req in split_reqs.get_requests() {
             let mut new_region = Region::default();
@@ -2751,13 +2764,20 @@ where
                     new_region.get_end_key().to_vec()
                 });
 
-            handle_region_split(
-                self.region.get_id(),
-                &old_start,
-                &old_end,
+            // handle_region_split(
+            //     self.region.get_id(),
+            //     &old_start,
+            //     &old_end,
+            //     new_region.get_id(),
+            //     &new_start,
+            //     &new_end,
+            // );
+
+            handle_region_split_with_old_guards(
+                old_guards.clone(),  // Pass a clone (or a reference if you can guarantee immutability)
                 new_region.get_id(),
-                &new_start,
-                &new_end,
+                new_region.get_start_key(),
+                new_region.get_end_key()
             );
 
             // info!(
