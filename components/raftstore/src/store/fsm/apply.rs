@@ -2776,8 +2776,8 @@ where
             handle_region_split_with_old_guards(
                 old_guards.clone(),  // Pass a clone (or a reference if you can guarantee immutability)
                 new_region.get_id(),
-                new_start,
-                new_end
+                &new_start,
+                &new_end
             );
 
             // info!(
