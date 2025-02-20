@@ -252,22 +252,26 @@ pub fn handle_region_split_with_old_guards(
     );
 
     // Get (or create) the new region's guard vector.
-    let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
+    // let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
+    let mut old_guards = old_guards;
 
-    // For each guard in the old guard vector, check for overlap and add if applicable.
-    new_guards.extend(old_guards.into_iter().filter_map(|guard| {
-        range_overlap(
+    old_guards = old_guards.into_iter().filter_map(|mut guard| {
+        if let Some((overlap_start, overlap_end)) = range_overlap(
             &guard.start_key,
             &guard.end_key,
             new_region_start_key,
             new_region_end_key,
-        )
-        .map(|(overlap_start, overlap_end)| RangeGuard {
-            guard_value: guard.guard_value,
-            start_key: overlap_start,
-            end_key: overlap_end,
-        })
-    }));
+        ) {
+            // Update the guard with the overlapping keys.
+            guard.start_key = overlap_start;
+            guard.end_key = overlap_end;
+            Some(guard)
+        } else {
+            None
+        }
+    }).collect();
+
+    REGION_TO_GUARD_MAP.insert(new_region_id, old_guards);
 
     // Verification: log any out-of-range guards.
     // for guard in new_guards.iter() {
@@ -279,11 +283,11 @@ pub fn handle_region_split_with_old_guards(
     //     }
     // }
 
-    info!(
-        "After region split, new_region_id={} has {} guards.",
-        new_region_id,
-        new_guards.len()
-    );
+    // info!(
+    //     "After region split, new_region_id={} has {} guards.",
+    //     new_region_id,
+    //     old_guards.len()
+    // );
 }
 
 /// Handle region split: old_region -> new_region.
