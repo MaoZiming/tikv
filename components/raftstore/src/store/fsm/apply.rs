@@ -2842,7 +2842,7 @@ where
             derived.get_end_key().to_vec()
         });
 
-        filter_region_split(derived.get_id(), &derived_start, &derived_end);
+        filter_region_split(old_guards.clone(), derived.get_id(), &derived_start, &derived_end);
         // info!(
         //     "filter_region_split: region_id={}, guard_value={}",
         //     derived.get_id(),

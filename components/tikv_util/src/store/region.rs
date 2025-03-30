@@ -183,10 +183,19 @@ pub fn handle_region_merge(
 /// Filters the RangeGuard vector for `old_region_id` so that only guards that
 /// fit into [old_region_start_key, old_region_end_key) remain.
 pub fn filter_region_split(
+    old_guards: Vec<RangeGuard>,
     old_region_id: u64,
     old_region_start_key: &[u8],
     old_region_end_key: &[u8],
 ) {
+    
+    for guard in &old_guards {
+        if guard.guard_value.contains("NOSPLIT") {
+            info!("NOSPLIT {}", old_region_id);
+            return;
+        }
+    }
+
     // Look up the old region's RangeGuard list in the DashMap.
     let mut guard_vec = match REGION_TO_GUARD_MAP.get_mut(&old_region_id) {
         Some(gv) => gv,
@@ -244,6 +253,14 @@ pub fn handle_region_split_with_old_guards(
     new_region_start_key: &[u8],
     new_region_end_key: &[u8],
 ) {
+    
+    for guard in &old_guards {
+        if guard.guard_value.contains("NOSPLIT") {
+            info!("NOSPLIT {}", new_region_id);
+            return;
+        }
+    }
+
     info!(
         "handle_region_split_with_old_guards: new_region_id={}, new_range=[{}, {}]",
         new_region_id,
