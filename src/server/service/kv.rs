@@ -1357,24 +1357,9 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
     )));
 
     let guard_value = req.get_guard_value();
-    // let raw_key = req.get_key();
-    // let encoded_key = Key::from_raw(raw_key);
+    let region_id = req.get_context().get_region_id();
+    let key_for_guard = req.get_key().to_vec();
     
-    // info!(
-    //     "future_get: raw key: {}, encoded key: {}, guard_value: {:?}, range_id: {:?}",
-    //     hex::encode_upper(raw_key),
-    //     hex::encode_upper(encoded_key.as_encoded()),
-    //     guard_value,
-    //     req.get_context().get_region_id()
-    // );
-
-    if !guard_value.is_empty() {
-        update_region_guard_with_key(
-            req.get_context().get_region_id(),
-            guard_value.to_string(),
-            req.get_key().to_vec())
-    }
-
     set_tls_tracker_token(tracker);
     let start = Instant::now();
     let v = storage.get(
@@ -1392,6 +1377,14 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         } else {
             match v {
                 Ok((val, stats)) => {
+                    // Only update guard if read succeeded (meaning we're on leader or valid lease)
+                    if !guard_value.is_empty() {
+                        update_region_guard_with_key(
+                            region_id,
+                            guard_value.to_string(),
+                            key_for_guard
+                        );
+                    }
                     let exec_detail_v2 = resp.mut_exec_details_v2();
                     let scan_detail_v2 = exec_detail_v2.mut_scan_detail_v2();
                     stats.stats.write_scan_detail(scan_detail_v2);
