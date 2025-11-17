@@ -108,25 +108,25 @@ pub fn handle_region_merge(
     new_region_end_key: &[u8],
 ) {
     // Debug info
-    info!(
-        "handle_region_merge: old_region_id={}, new_region_id={}, \
-         old_range=[{}, {}), new_range=[{}, {})",
-        old_region_id,
-        new_region_id,
-        hex::encode_upper(old_region_start_key),
-        hex::encode_upper(old_region_end_key),
-        hex::encode_upper(new_region_start_key),
-        hex::encode_upper(new_region_end_key)
-    );
+    // info!(
+    //     "handle_region_merge: old_region_id={}, new_region_id={}, \
+    //      old_range=[{}, {}), new_range=[{}, {})",
+    //     old_region_id,
+    //     new_region_id,
+    //     hex::encode_upper(old_region_start_key),
+    //     hex::encode_upper(old_region_end_key),
+    //     hex::encode_upper(new_region_start_key),
+    //     hex::encode_upper(new_region_end_key)
+    // );
 
     // 1) Locate the old region's guards.
-    let old_guards = match REGION_TO_GUARD_MAP.get(&old_region_id) {
-        Some(guard_vec) => guard_vec.clone(),
+    let old_guards_ref = match REGION_TO_GUARD_MAP.get(&old_region_id) {
+        Some(guard_vec) => guard_vec,
         None => {
-            info!(
-                "No RangeGuards found for old_region_id={}, nothing to merge.",
-                old_region_id
-            );
+            // info!(
+            //     "No RangeGuards found for old_region_id={}, nothing to merge.",
+            //     old_region_id
+            // );
             return;
         }
     };
@@ -139,44 +139,42 @@ pub fn handle_region_merge(
     //     return;
     // }
 
-    // 2) Build a list of only the guards that fall inside [new_region_start_key, new_region_end_key).
-    let mut transferred_guards = Vec::new();
+    // 2) Filter and extend directly: only clone guards that are in range
+    let old_count = old_guards_ref.len();
     let mut skipped_count = 0;
-    for guard in &old_guards {
+    
+    let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
+    let new_count_before = new_guards.len();
+    
+    for guard in old_guards_ref.iter() {
         if guard_in_region_range(guard, new_region_start_key, new_region_end_key) {
-            transferred_guards.push(guard.clone());
+            new_guards.push(guard.clone());
         } else {
             skipped_count += 1;
-            info!(
-                "Skipping guard not in new region range => guard_value='{}', range=[{},{})",
-                guard.guard_value,
-                hex::encode_upper(&guard.start_key),
-                hex::encode_upper(&guard.end_key)
-            );
+            // info!(
+            //     "Skipping guard not in new region range => guard_value='{}', range=[{},{})",
+            //     guard.guard_value,
+            //     hex::encode_upper(&guard.start_key),
+            //     hex::encode_upper(&guard.end_key)
+            // );
         }
     }
-
-    // 3) Insert/extend old region's *valid* guards into new region's guard list.
-    let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
-    let old_count = old_guards.len();
-    let new_count_before = new_guards.len();
-    new_guards.extend(transferred_guards);
 
     // 4) Remove the old region from the map entirely (since it's merged).
     REGION_TO_GUARD_MAP.remove(&old_region_id);
 
     // 5) Final log / verification
-    info!(
-        "Merged old_region_id={} into new_region_id={}. \
-        Moved {} guards; skipped {} out-of-range guards. \
-        New region had {} => now has {} guards total.",
-        old_region_id,
-        new_region_id,
-        old_count - skipped_count,
-        skipped_count,
-        new_count_before,
-        new_guards.len()
-    );
+    // info!(
+    //     "Merged old_region_id={} into new_region_id={}. \
+    //     Moved {} guards; skipped {} out-of-range guards. \
+    //     New region had {} => now has {} guards total.",
+    //     old_region_id,
+    //     new_region_id,
+    //     old_count - skipped_count,
+    //     skipped_count,
+    //     new_count_before,
+    //     new_guards.len()
+    // );
 }
 
 
@@ -191,7 +189,7 @@ pub fn filter_region_split(
     
     for guard in &old_guards {
         if guard.guard_value.contains("NOSPLIT") {
-            info!("NOSPLIT {}", old_region_id);
+            // info!("NOSPLIT {}", old_region_id);
             return;
         }
     }
@@ -200,7 +198,7 @@ pub fn filter_region_split(
     let mut guard_vec = match REGION_TO_GUARD_MAP.get_mut(&old_region_id) {
         Some(gv) => gv,
         None => {
-            info!("No RangeGuards found for region {}", old_region_id);
+            // info!("No RangeGuards found for region {}", old_region_id);
             return;
         }
     };
@@ -223,10 +221,10 @@ pub fn filter_region_split(
                 g.end_key = new_end;
                 Some(g)
             } else {
-                info!(
-                    "Discarding guard out of range => region={}, guard={:?}",
-                    old_region_id, g
-                );
+                // info!(
+                //     "Discarding guard out of range => region={}, guard={:?}",
+                //     old_region_id, g
+                // );
                 None
             }
         })
@@ -236,15 +234,15 @@ pub fn filter_region_split(
     *guard_vec = updated_guards;
 
     // Debug info
-    info!(
-        "handle_region_split: region={} filtered from {} => {} guards. \
-         Now only those that fit [{}, {}) remain.",
-        old_region_id,
-        original_count,
-        guard_vec.len(),
-        hex::encode_upper(old_region_start_key),
-        hex::encode_upper(old_region_end_key)
-    );
+    // info!(
+    //     "handle_region_split: region={} filtered from {} => {} guards. \
+    //      Now only those that fit [{}, {}) remain.",
+    //     old_region_id,
+    //     original_count,
+    //     guard_vec.len(),
+    //     hex::encode_upper(old_region_start_key),
+    //     hex::encode_upper(old_region_end_key)
+    // );
 }
 
 pub fn handle_region_split_with_old_guards(
@@ -256,17 +254,17 @@ pub fn handle_region_split_with_old_guards(
     
     for guard in &old_guards {
         if guard.guard_value.contains("NOSPLIT") {
-            info!("NOSPLIT {}", new_region_id);
+            // info!("NOSPLIT {}", new_region_id);
             return;
         }
     }
 
-    info!(
-        "handle_region_split_with_old_guards: new_region_id={}, new_range=[{}, {}]",
-        new_region_id,
-        hex::encode_upper(new_region_start_key),
-        hex::encode_upper(new_region_end_key)
-    );
+    // info!(
+    //     "handle_region_split_with_old_guards: new_region_id={}, new_range=[{}, {}]",
+    //     new_region_id,
+    //     hex::encode_upper(new_region_start_key),
+    //     hex::encode_upper(new_region_end_key)
+    // );
 
     // Get (or create) the new region's guard vector.
     // let mut new_guards = REGION_TO_GUARD_MAP.entry(new_region_id).or_insert_with(Vec::new);
@@ -325,35 +323,33 @@ pub fn handle_region_split(
     new_region_end_key: &[u8],
 ) {
     // Debug info
-    info!(
-        "handle_region_split: old_region_id={}, new_region_id={}, \
-        old_range=[{}, {}], new_range=[{}, {}]",
-        old_region_id,
-        new_region_id,
-        hex::encode_upper(old_region_start_key),
-        hex::encode_upper(old_region_end_key),
-        hex::encode_upper(new_region_start_key),
-        hex::encode_upper(new_region_end_key)
-    );
+    // info!(
+    //     "handle_region_split: old_region_id={}, new_region_id={}, \
+    //     old_range=[{}, {}], new_range=[{}, {}]",
+    //     old_region_id,
+    //     new_region_id,
+    //     hex::encode_upper(old_region_start_key),
+    //     hex::encode_upper(old_region_end_key),
+    //     hex::encode_upper(new_region_start_key),
+    //     hex::encode_upper(new_region_end_key)
+    // );
 
     // Get the RangeGuard vector for the old region (if none, nothing to do).
-    let old_guards = match REGION_TO_GUARD_MAP.get(&old_region_id) {
-        Some(guard_vec) => guard_vec.clone(),
+    let old_guards_ref = match REGION_TO_GUARD_MAP.get(&old_region_id) {
+        Some(guard_vec) => guard_vec,
         None => {
-            info!(
-                "No RangeGuards found for old_region_id={}, nothing to split.",
-                old_region_id
-            );
+            // info!(
+            //     "No RangeGuards found for old_region_id={}, nothing to split.",
+            //     old_region_id
+            // );
             return;
         }
     };
 
-    // Insert a copy of these guards into the new region's entry.
-    REGION_TO_GUARD_MAP.insert(new_region_id, old_guards.clone());
-    
-    if let Some(mut new_guards) = REGION_TO_GUARD_MAP.get_mut(&new_region_id) {
-        new_guards.retain(|guard| {
-            // Only keep guards that have an overlapping segment with the new region boundaries.
+    // Filter and clone only the overlapping guards directly into new region
+    let new_guards: Vec<RangeGuard> = old_guards_ref
+        .iter()
+        .filter(|guard| {
             range_overlap(
                 &guard.start_key,
                 &guard.end_key,
@@ -361,8 +357,13 @@ pub fn handle_region_split(
                 new_region_end_key,
             )
             .is_some()
-        });
-    }
+        })
+        .cloned()
+        .collect();
+    
+    REGION_TO_GUARD_MAP.insert(new_region_id, new_guards);
+
+    REGION_TO_GUARD_MAP.insert(new_region_id, new_guards);
 
     // // Verification step: all new_region's guards must lie in [new_region_start_key, new_region_end_key).
     // for guard in new_guards.iter() {
@@ -375,15 +376,15 @@ pub fn handle_region_split(
     //     }
     // }
 
-    if let Some(new_guards) = REGION_TO_GUARD_MAP.get(&new_region_id) {
-        info!(
-            "After region split, old_region_id={} has {} guards, new_region_id={} has {} guards.",
-            old_region_id,
-            old_guards.len(),
-            new_region_id,
-            new_guards.len()
-        );
-    }
+    // if let Some(new_guards) = REGION_TO_GUARD_MAP.get(&new_region_id) {
+    //     info!(
+    //         "After region split, old_region_id={} has {} guards, new_region_id={} has {} guards.",
+    //         old_region_id,
+    //         old_guards_ref.len(),
+    //         new_region_id,
+    //         new_guards.len()
+    //     );
+    // }
 }
 
 
@@ -391,7 +392,7 @@ pub fn handle_region_split(
 
 /// Helper function to print the entire REGION_TO_GUARD_MAP.
 pub fn print_region_guard_map() {
-    info!("Printing REGION_TO_GUARD_MAP:");
+    // info!("Printing REGION_TO_GUARD_MAP:");
 
     for entry in REGION_TO_GUARD_MAP.iter() {
         let region_id = entry.key();
@@ -401,15 +402,15 @@ pub fn print_region_guard_map() {
         for guard in guards.iter() {
             if guard.guard_value != "default_guard" {
                 if !printed {
-                    info!("Region ID: {}", region_id);
+                    // info!("Region ID: {}", region_id);
                     printed = true;
                 }
-                info!(
-                    "  - Guard: start_key={}, end_key={}, guard_value={}",
-                    hex::encode_upper(&guard.start_key),
-                    hex::encode_upper(&guard.end_key),
-                    guard.guard_value
-                );
+                // info!(
+                //     "  - Guard: start_key={}, end_key={}, guard_value={}",
+                //     hex::encode_upper(&guard.start_key),
+                //     hex::encode_upper(&guard.end_key),
+                //     guard.guard_value
+                // );
             }
         }
     }
@@ -422,10 +423,10 @@ pub fn print_region_guard_map() {
 /// with a single guard that covers the whole region.
 pub fn update_region_guard(region_id: u64, guard_value: String) {
     // print_region_guard_map();
-    info!(
-        "Updating region guard (entire region): region_id={}, guard_value={}",
-        region_id, guard_value
-    );
+    // info!(
+    //     "Updating region guard (entire region): region_id={}, guard_value={}",
+    //     region_id, guard_value
+    // );
 
     let entire_guard = RangeGuard {
         start_key: Vec::new(),
@@ -446,10 +447,10 @@ pub fn update_region_guard(region_id: u64, guard_value: String) {
             vec![entire_guard]
         });
 
-    info!(
-        "Finished updating region guard (entire region): region_id={}, guard_value={}",
-        region_id, guard_value
-    );
+    // info!(
+    //     "Finished updating region guard (entire region): region_id={}, guard_value={}",
+    //     region_id, guard_value
+    // );
     // print_region_guard_map();
 }
 
@@ -470,12 +471,12 @@ fn ranges_overlap(a: &RangeGuard, b: &RangeGuard) -> bool {
         return false;
     }
 
-    info!(
-        "DROP overlap guard: start_key={}, end_key={}, guard_value={}",
-        hex::encode_upper(&a.start_key),
-        hex::encode_upper(&a.end_key),
-        a.guard_value
-    );
+    // info!(
+    //     "DROP overlap guard: start_key={}, end_key={}, guard_value={}",
+    //     hex::encode_upper(&a.start_key),
+    //     hex::encode_upper(&a.end_key),
+    //     a.guard_value
+    // );
 
     true
 }
@@ -499,12 +500,12 @@ fn remove_overlaps(rg_vec: &mut Vec<RangeGuard>, main_idx: usize) {
 /// - Otherwise, resets the entire region using `update_region_guard`.
 pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Vec<u8>) {
     // print_region_guard_map();
-    info!(
-        "Updating region guard with key: region_id={}, guard_value={}, key={}",
-        region_id,
-        guard_value,
-        hex::encode_upper(&key)
-    );
+    // info!(
+    //     "Updating region guard with key: region_id={}, guard_value={}, key={}",
+    //     region_id,
+    //     guard_value,
+    //     hex::encode_upper(&key)
+    // );
 
     let mut remove_overlap = true;
     if let Some(mut stripped_value) = guard_value.strip_prefix("START_") {
@@ -524,14 +525,14 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                 if let Some(idx) = rg_vec.iter().position(|rg| rg.guard_value == stripped_value) {
                     // Now we have the index of the existing guard
                     rg_vec[idx].start_key = key.clone();
-                    info!(
-                        "Reused existing START RangeGuard: region_id={}, guard_value={}, \
-                         new start_key={}, end_key={}",
-                        region_id,
-                        stripped_value,
-                        hex::encode_upper(&key),
-                        hex::encode_upper(&rg_vec[idx].end_key),
-                    );
+                    // info!(
+                    //     "Reused existing START RangeGuard: region_id={}, guard_value={}, \
+                    //      new start_key={}, end_key={}",
+                    //     region_id,
+                    //     stripped_value,
+                    //     hex::encode_upper(&key),
+                    //     hex::encode_upper(&rg_vec[idx].end_key),
+                    // );
                     if remove_overlap {
                         remove_overlaps(rg_vec, idx);
                     }
@@ -544,12 +545,12 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                     });
                     // The new RangeGuard is always pushed to the last
                     let idx_new = rg_vec.len() - 1;
-                    info!(
-                        "Added START RangeGuard: region_id={}, guard_value={}, start_key={}",
-                        region_id,
-                        stripped_value,
-                        hex::encode_upper(&key)
-                    );
+                    // info!(
+                    //     "Added START RangeGuard: region_id={}, guard_value={}, start_key={}",
+                    //     region_id,
+                    //     stripped_value,
+                    //     hex::encode_upper(&key)
+                    // );
                     if remove_overlap {
                         remove_overlaps(rg_vec, idx_new);
                     }
@@ -572,13 +573,13 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                     // Now we have the index of the existing guard
                     rg_vec[idx].end_key = key.clone();
 
-                    info!(
-                        "Matched END RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
-                        region_id,
-                        stripped_value,
-                        hex::encode_upper(&rg_vec[idx].start_key),
-                        hex::encode_upper(&key),
-                    );
+                    // info!(
+                    //     "Matched END RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
+                    //     region_id,
+                    //     stripped_value,
+                    //     hex::encode_upper(&rg_vec[idx].start_key),
+                    //     hex::encode_upper(&key),
+                    // );
                     if remove_overlap {
                         remove_overlaps(rg_vec, idx);
                     }
@@ -596,12 +597,12 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                     });
                     // The new RangeGuard is always pushed to the last
                     let idx_new = rg_vec.len() - 1;
-                    info!(
-                        "Added END RangeGuard: region_id={}, guard_value={}, end_key={}",
-                        region_id,
-                        stripped_value,
-                        hex::encode_upper(&key)
-                    );
+                    // info!(
+                    //     "Added END RangeGuard: region_id={}, guard_value={}, end_key={}",
+                    //     region_id,
+                    //     stripped_value,
+                    //     hex::encode_upper(&key)
+                    // );
                     if remove_overlap {
                         remove_overlaps(rg_vec, idx_new);
                     }
@@ -630,13 +631,13 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                         // Update both the start and end keys.
                         rg_vec[idx].start_key = hex::decode(guard_start).unwrap_or_default();
                         rg_vec[idx].end_key = hex::decode(guard_end).unwrap_or_default();
-                        info!(
-                            "Reused existing GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
-                            region_id,
-                            custom_guard,
-                            guard_start,
-                            guard_end,
-                        );
+                        // info!(
+                        //     "Reused existing GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
+                        //     region_id,
+                        //     custom_guard,
+                        //     guard_start,
+                        //     guard_end,
+                        // );
                         if remove_overlap {
                             remove_overlaps(rg_vec, idx);
                         }
@@ -648,13 +649,13 @@ pub fn update_region_guard_with_key(region_id: u64, guard_value: String, key: Ve
                             guard_value: custom_guard.to_owned(),
                         });
                         let idx_new = rg_vec.len() - 1;
-                        info!(
-                            "Added GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
-                            region_id,
-                            custom_guard,
-                            guard_start,
-                            guard_end,
-                        );
+                        // info!(
+                        //     "Added GUARD RangeGuard: region_id={}, guard_value={}, start_key={}, end_key={}",
+                        //     region_id,
+                        //     custom_guard,
+                        //     guard_start,
+                        //     guard_end,
+                        // );
                         if remove_overlap {
                             remove_overlaps(rg_vec, idx_new);
                         }
@@ -715,14 +716,14 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
         let in_range_end = end_empty || key <= range_guard.end_key.as_slice();
     
         if in_range_start && in_range_end {
-            info!(
-                "Key {} is in range [{}, {}] for region_id={}, guard_value={}",
-                hex::encode_upper(key),
-                hex::encode_upper(&range_guard.start_key),
-                hex::encode_upper(&range_guard.end_key),
-                region_id,
-                range_guard.guard_value
-            );
+            // info!(
+            //     "Key {} is in range [{}, {}] for region_id={}, guard_value={}",
+            //     hex::encode_upper(key),
+            //     hex::encode_upper(&range_guard.start_key),
+            //     hex::encode_upper(&range_guard.end_key),
+            //     region_id,
+            //     range_guard.guard_value
+            // );
             matched_guards.push(range_guard.guard_value.clone());
         }
     }
@@ -782,7 +783,7 @@ pub fn get_region_guard(region_id: u64) -> Option<String> {
 /// The expected format for each guard is: `guard_value(start_key_hex,end_key_hex)`.
 /// If the start or end key is empty, it is represented by a colon (`:`).
 pub fn set_region_guard_from_string(region_id: u64, guard_value: String) {
-    info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
+    // info!("set_region_guard_from_string: {:?}, {:?}", region_id, guard_value);
 
     // If the guard string is empty, remove any existing guards.
     if guard_value.trim().is_empty() {

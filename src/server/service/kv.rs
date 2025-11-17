@@ -32,6 +32,7 @@ use tikv_kv::{RaftExtension, StageLatencyStats};
 use tikv_util::{
     future::{paired_future_callback, poll_future_notify},
     mpsc::future::{unbounded, BatchReceiver, Sender, WakePolicy},
+    store::region::update_region_guard_with_key,
     sys::memory_usage_reaches_high_water,
     time::Instant,
     worker::Scheduler,
@@ -58,7 +59,6 @@ use crate::{
         SecondaryLocksStatus, Storage, TxnStatus,
     },
 };
-use tikv_util::store::region::update_region_guard_with_key;
 const GRPC_MSG_MAX_BATCH_SIZE: usize = 128;
 const GRPC_MSG_NOTIFY_SIZE: usize = 8;
 
@@ -1356,10 +1356,10 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         req.get_version(),
     )));
 
-    let guard_value = req.get_guard_value();
+    let guard_value = req.get_guard_value().to_vec();
     let region_id = req.get_context().get_region_id();
     let key_for_guard = req.get_key().to_vec();
-    
+
     set_tls_tracker_token(tracker);
     let start = Instant::now();
     let v = storage.get(
@@ -1381,8 +1381,8 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
                     if !guard_value.is_empty() {
                         update_region_guard_with_key(
                             region_id,
-                            guard_value.to_string(),
-                            key_for_guard
+                            String::from_utf8_lossy(&guard_value).to_string(),
+                            key_for_guard,
                         );
                     }
                     let exec_detail_v2 = resp.mut_exec_details_v2();
