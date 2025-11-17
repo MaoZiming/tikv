@@ -1356,7 +1356,8 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         req.get_version(),
     )));
 
-    let guard_value = req.get_guard_value().to_vec();
+    // Capture guard_value as an owned String so it can live into the async block
+    let guard_value = req.get_guard_value().to_string();
     let region_id = req.get_context().get_region_id();
     let key_for_guard = req.get_key().to_vec();
 
@@ -1381,7 +1382,7 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
                     if !guard_value.is_empty() {
                         update_region_guard_with_key(
                             region_id,
-                            String::from_utf8_lossy(&guard_value).to_string(),
+                            guard_value,
                             key_for_guard,
                         );
                     }
