@@ -683,21 +683,19 @@ impl PdClient for RpcClient {
         PD_HEARTBEAT_COUNTER_VEC.with_label_values(&["send"]).inc();
 
         let mut req = pdpb::RegionHeartbeatRequest::default();
-        let mut guard_value = region.guard_value.clone();
+        // let mut guard_value = region.guard_value.clone();
 
-        if let Some(guard_value_from_store) = get_region_guard(region.get_id()) {
-            guard_value = guard_value_from_store;
+        // if let Some(guard_value_from_store) = get_region_guard(region.get_id()) {
+        //     guard_value = guard_value_from_store;
         
-            info!(
-                "Sending Region Heartbeat: region_id={}, guard_value={}, region: {}:{}",
-                region.get_id(),
-                guard_value,
-                hex::encode_upper(region.get_start_key()),
-                hex::encode_upper(region.get_end_key()),
-            );
-        }
-
-
+        //     info!(
+        //         "Sending Region Heartbeat: region_id={}, guard_value={}, region: {}:{}",
+        //         region.get_id(),
+        //         guard_value,
+        //         hex::encode_upper(region.get_start_key()),
+        //         hex::encode_upper(region.get_end_key()),
+        //     );
+        // }
         req.set_term(term);
         req.set_header(self.header());
         req.set_region(region);
@@ -712,7 +710,7 @@ impl PdClient for RpcClient {
         req.set_approximate_size(region_stat.approximate_size);
         req.set_approximate_keys(region_stat.approximate_keys);
         req.set_cpu_usage(region_stat.cpu_usage);
-        req.set_guard_value(guard_value);
+        // req.set_guard_value(guard_value);
         if let Some(s) = replication_status {
             req.set_replication_status(s);
         }
