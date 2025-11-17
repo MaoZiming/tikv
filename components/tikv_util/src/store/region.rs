@@ -363,8 +363,6 @@ pub fn handle_region_split(
     
     REGION_TO_GUARD_MAP.insert(new_region_id, new_guards);
 
-    REGION_TO_GUARD_MAP.insert(new_region_id, new_guards);
-
     // // Verification step: all new_region's guards must lie in [new_region_start_key, new_region_end_key).
     // for guard in new_guards.iter() {
     //     if !guard_in_region_range(guard, new_region_start_key, new_region_end_key)
