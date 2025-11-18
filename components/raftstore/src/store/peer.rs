@@ -13,7 +13,7 @@ use std::{
     time::{Duration, Instant},
     u64, usize,
 };
-use tikv_util::store::region::get_region_guard;
+
 use bitflags::bitflags;
 use bytes::Bytes;
 use collections::{HashMap, HashSet};
@@ -5373,7 +5373,7 @@ where
             wait_data_peers: self.wait_data_peers.clone(),
         });
 
-        let region_id = self.region().get_id();
+        let _region_id = self.region().get_id();
         // let mut guard_value = self.region().guard_value.clone(); // Ensure guard_value exists
         
 

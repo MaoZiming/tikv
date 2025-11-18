@@ -697,9 +697,9 @@ impl<K: PrewriteKind> Prewriter<K> {
             let mutation_type = m.mutation_type();
 
             // Guard check: if guard_value is empty or default, skip validation entirely
-            let key = &self.primary;
+            let primary_key = &self.primary;
             if !self.guard_value.is_empty() && self.guard_value != "default-prewrite" {
-                if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), key) {
+                if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), primary_key) {
                     if !guard_value.split(',').any(|g| g == self.guard_value) {
                         warn!(
                             "Prewrite aborted: GuardValue mismatch for Region {}. Expected: {}, Found: {}",

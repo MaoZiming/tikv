@@ -2452,7 +2452,7 @@ fn new_batch_split_region_request(
     ids: Vec<pdpb::SplitId>,
     right_derive: bool,
     share_source_region_size: bool,
-    guard_value: String,
+    _guard_value: String,
 ) -> AdminRequest {
     let mut req = AdminRequest::default();
     req.set_cmd_type(AdminCmdType::BatchSplit);

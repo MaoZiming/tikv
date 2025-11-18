@@ -202,7 +202,7 @@ pub fn filter_region_split(
             return;
         }
     };
-    let original_count = guard_vec.len();
+    let _original_count = guard_vec.len();
 
     // Build a new vector where each RangeGuard is trimmed to the overlap.
     // If there is no overlap, the guard is dropped.
@@ -393,7 +393,7 @@ pub fn print_region_guard_map() {
     // info!("Printing REGION_TO_GUARD_MAP:");
 
     for entry in REGION_TO_GUARD_MAP.iter() {
-        let region_id = entry.key();
+        let _region_id = entry.key();
         let guards = entry.value();
 
         let mut printed = false;

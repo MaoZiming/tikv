@@ -121,7 +121,7 @@ enum DelayReason {
     Shutdown,
 }
 
-use tikv_util::store::region::set_region_guard_from_string;
+
 
 /// Limits the maximum number of regions returned by error.
 ///

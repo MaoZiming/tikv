@@ -9,7 +9,7 @@ use std::{
     },
 };
 
-use tikv_util::info;
+
 
 use collections::HashMap;
 use kvproto::metapb::Region;

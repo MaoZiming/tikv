@@ -9,7 +9,7 @@ use std::{
     time::Duration,
     u64,
 };
-use hex;
+
 
 use futures::{
     channel::mpsc,
@@ -20,7 +20,7 @@ use futures::{
     stream::{ErrInto, StreamExt},
     TryStreamExt,
 };
-use tikv_util::store::region::get_region_guard;
+
 use grpcio::{EnvBuilder, Environment, WriteFlags};
 use kvproto::{
     meta_storagepb::{

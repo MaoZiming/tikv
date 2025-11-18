@@ -72,7 +72,7 @@ use tikv_util::{
 use time::Timespec;
 use tracker::GLOBAL_TRACKERS;
 use uuid::Builder as UuidBuilder;
-use tikv_util::store::region::{update_region_guard, handle_region_split, handle_region_split_with_old_guards, handle_region_merge, filter_region_split, REGION_TO_GUARD_MAP};
+use tikv_util::store::region::{handle_region_split_with_old_guards, handle_region_merge, filter_region_split, REGION_TO_GUARD_MAP};
 use self::memtrace::*;
 use super::metrics::*;
 use crate::{
@@ -99,8 +99,7 @@ use crate::{
     },
     Error, Result,
 };
-use tikv_util::store::region::set_region_guard_from_string;
-use tikv_util::store::region::get_region_guard;
+
 
 // These consts are shared in both v1 and v2.
 pub const DEFAULT_APPLY_WB_SIZE: usize = 4 * 1024;
@@ -2720,7 +2719,7 @@ where
             //     info!("self.region {} has no guard value", self.region.get_id());
             // }
 
-            let old_start = Key::from_encoded(self.region.get_start_key().to_vec())
+            let _old_start = Key::from_encoded(self.region.get_start_key().to_vec())
             .to_raw()
             .unwrap_or_else(|e| {
                 error!(
@@ -2731,7 +2730,7 @@ where
                 self.region.get_start_key().to_vec()
             });
         
-            let old_end = Key::from_encoded(self.region.get_end_key().to_vec())
+            let _old_end = Key::from_encoded(self.region.get_end_key().to_vec())
                 .to_raw()
                 .unwrap_or_else(|e| {
                     error!(
