@@ -32,7 +32,6 @@ use tikv_kv::{RaftExtension, StageLatencyStats};
 use tikv_util::{
     future::{paired_future_callback, poll_future_notify},
     mpsc::future::{unbounded, BatchReceiver, Sender, WakePolicy},
-    store::region::update_region_guard_with_key,
     sys::memory_usage_reaches_high_water,
     time::Instant,
     worker::Scheduler,
@@ -59,6 +58,7 @@ use crate::{
         SecondaryLocksStatus, Storage, TxnStatus,
     },
 };
+use tikv_util::store::region::update_region_guard_with_key;
 const GRPC_MSG_MAX_BATCH_SIZE: usize = 128;
 const GRPC_MSG_NOTIFY_SIZE: usize = 8;
 
@@ -1356,10 +1356,14 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         req.get_version(),
     )));
 
-    // Capture guard_value as an owned String so it can live into the async block
-    let guard_value = req.get_guard_value().to_string();
-    let region_id = req.get_context().get_region_id();
-    let key_for_guard = req.get_key().to_vec();
+    let guard_value = req.get_guard_value();
+
+    if !guard_value.is_empty() {
+        update_region_guard_with_key(
+            req.get_context().get_region_id(),
+            guard_value.to_string(),
+            req.get_key().to_vec())
+    }
 
     set_tls_tracker_token(tracker);
     let start = Instant::now();
@@ -1378,14 +1382,6 @@ fn future_get<E: Engine, L: LockManager, F: KvFormat>(
         } else {
             match v {
                 Ok((val, stats)) => {
-                    // Only update guard if read succeeded (meaning we're on leader or valid lease)
-                    if !guard_value.is_empty() {
-                        update_region_guard_with_key(
-                            region_id,
-                            guard_value,
-                            key_for_guard,
-                        );
-                    }
                     let exec_detail_v2 = resp.mut_exec_details_v2();
                     let scan_detail_v2 = exec_detail_v2.mut_scan_detail_v2();
                     stats.stats.write_scan_detail(scan_detail_v2);
