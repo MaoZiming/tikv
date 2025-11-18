@@ -731,11 +731,11 @@ pub fn get_region_guard_for_key(region_id: u64, key: &[u8]) -> Option<String> {
         return Some(matched_guards.join(","));
     }
 
-    warn!(
-        "No matching guard found for region_id={}, key={}",
-        region_id,
-        hex::encode_upper(key)
-    );
+    // warn!(
+    //     "No matching guard found for region_id={}, key={}",
+    //     region_id,
+    //     hex::encode_upper(key)
+    // );
     return Some("NoExistingGuard".to_string());
 }
 

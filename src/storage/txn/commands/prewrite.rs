@@ -14,11 +14,12 @@ use kvproto::kvrpcpb::{
     PrewriteRequestPessimisticAction::{self, *},
 };
 use tikv_kv::SnapshotExt;
+use tikv_util::store::region::get_region_guard_for_key;
 use txn_types::{
     insert_old_value_if_resolved, Key, Mutation, OldValue, OldValues, TimeStamp, TxnExtra, Write,
     WriteType,
 };
-use tikv_util::store::region::get_region_guard_for_key;
+
 use super::ReaderWithStats;
 use crate::storage::{
     kv::WriteData,
@@ -253,8 +254,10 @@ impl CommandExt for Prewrite {
 
 impl<S: Snapshot, L: LockManager> WriteCommand<S, L> for Prewrite {
     fn process_write(self, snapshot: S, context: WriteContext<'_, L>) -> Result<WriteResult> {
-
-        info!("Prewrite Command Processing - GuardValue: {:?}", self.guard_value);
+        info!(
+            "Prewrite Command Processing - GuardValue: {:?}",
+            self.guard_value
+        );
         self.into_prewriter().process_write(snapshot, context)
     }
 }
@@ -583,17 +586,17 @@ impl<K: PrewriteKind> Prewriter<K> {
         reader: &mut SnapshotReader<impl Snapshot>,
         extra_op: ExtraOp,
     ) -> Result<(Vec<std::result::Result<(), StorageError>>, TimeStamp)> {
-
         let key = &self.primary;
-        // info!("Prewrite in commands!! - GuardValue: {:?}, key: {:?}, region-id: {:?}", self.guard_value, key, self.ctx.get_region_id());
+        // info!("Prewrite in commands!! - GuardValue: {:?}, key: {:?}, region-id:
+        // {:?}", self.guard_value, key, self.ctx.get_region_id());
         // Call `query_region`
         if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), key) {
             // info!("Region guard: {:?}", guard_value);
             // info!("self.guard_value: {:?}", self.guard_value);
 
             if !self.guard_value.is_empty()
-            && self.guard_value != "default-prewrite"
-            && !guard_value.split(',').any(|g| g == self.guard_value)
+                && self.guard_value != "default-prewrite"
+                && !guard_value.split(',').any(|g| g == self.guard_value)
             {
                 warn!(
                     "Prewrite aborted: GuardValue mismatch for Region {}. Expected: {}, Found: {}",
@@ -615,16 +618,15 @@ impl<K: PrewriteKind> Prewriter<K> {
             }
             // Use the region metadata as needed in your prewrite logic
         } else {
-            if !self.guard_value.is_empty()
-            && self.guard_value != "default-prewrite" 
-            {
+            if !self.guard_value.is_empty() && self.guard_value != "default-prewrite" {
                 return Err(Error::from(ErrorInner::Other(box_err!(
                     "Delayed Writes! GuardValue mismatch for Region {}. Expected: {}, Found: NONE",
                     self.ctx.get_region_id(),
                     self.guard_value
                 ))));
             }
-            // info!("Region {} not found in REGION_MAP", self.ctx.get_region_id());
+            // info!("Region {} not found in REGION_MAP",
+            // self.ctx.get_region_id());
         }
 
         let commit_kind = match (&self.secondary_keys, self.try_one_pc) {
@@ -693,6 +695,33 @@ impl<K: PrewriteKind> Prewriter<K> {
             let m = m.into_mutation();
             let key = m.key().clone();
             let mutation_type = m.mutation_type();
+
+            // Guard check: if guard_value is empty or default, skip validation entirely
+            let key = &self.primary;
+            if !self.guard_value.is_empty() && self.guard_value != "default-prewrite" {
+                if let Some(guard_value) = get_region_guard_for_key(self.ctx.get_region_id(), key) {
+                    if !guard_value.split(',').any(|g| g == self.guard_value) {
+                        warn!(
+                            "Prewrite aborted: GuardValue mismatch for Region {}. Expected: {}, Found: {}",
+                            self.ctx.get_region_id(),
+                            self.guard_value,
+                            guard_value
+                        );
+                        return Err(Error::from(ErrorInner::Other(box_err!(
+                            "Delayed Writes! GuardValue mismatch for Region {}. Expected: {}, Found: {}",
+                            self.ctx.get_region_id(),
+                            self.guard_value,
+                            guard_value
+                        ))));
+                    }
+                } else {
+                    return Err(Error::from(ErrorInner::Other(box_err!(
+                        "Delayed Writes! GuardValue mismatch for Region {}. Expected: {}, Found: NONE",
+                        self.ctx.get_region_id(),
+                        self.guard_value
+                    ))));
+                }
+            }
 
             let mut secondaries = &self.secondary_keys.as_ref().map(|_| vec![]);
             if Some(m.key()) == async_commit_pk {
@@ -2437,7 +2466,6 @@ mod tests {
             false,
             AssertionLevel::Off,
             "default_guard".to_string(),
-            
             Context::default(),
         );
         let context = WriteContext {
