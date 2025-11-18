@@ -254,10 +254,10 @@ impl CommandExt for Prewrite {
 
 impl<S: Snapshot, L: LockManager> WriteCommand<S, L> for Prewrite {
     fn process_write(self, snapshot: S, context: WriteContext<'_, L>) -> Result<WriteResult> {
-        info!(
-            "Prewrite Command Processing - GuardValue: {:?}",
-            self.guard_value
-        );
+        // info!(
+        //     "Prewrite Command Processing - GuardValue: {:?}",
+        //     self.guard_value
+        // );
         self.into_prewriter().process_write(snapshot, context)
     }
 }

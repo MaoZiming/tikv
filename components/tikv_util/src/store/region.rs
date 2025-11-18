@@ -429,7 +429,7 @@ pub fn update_region_guard(region_id: u64, guard_value: String) {
     let entire_guard = RangeGuard {
         start_key: Vec::new(),
         end_key: Vec::new(),
-        guard_value: guard_value.clone(),
+        guard_value,
     };
 
     // SAFER CONCURRENCY: Do this in one atomic operation
