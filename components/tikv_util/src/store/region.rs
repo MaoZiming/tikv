@@ -83,10 +83,10 @@ fn range_overlap(
         _ => guard_end,
     };
 
-    info!(
-        "range_overlap: guard_start: {:?}, guard_end: {:?}, region_start: {:?}, region_end: {:?}, overlap_start: {:?}, overlap_end: {:?}",
-        guard_start, guard_end, region_start, region_end, overlap_start, overlap_end,
-    );
+    // info!(
+    //     "range_overlap: guard_start: {:?}, guard_end: {:?}, region_start: {:?}, region_end: {:?}, overlap_start: {:?}, overlap_end: {:?}",
+    //     guard_start, guard_end, region_start, region_end, overlap_start, overlap_end,
+    // );
 
     // Now check if overlap_start <= overlap_end in the sense of end-key comparison
     // (empty => +∞). If overlap_start > overlap_end, no valid overlap.
