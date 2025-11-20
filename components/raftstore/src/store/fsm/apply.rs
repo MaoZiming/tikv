@@ -3110,14 +3110,14 @@ where
             });
 
         // Now call handle_region_merge with the raw keys.
-        // handle_region_merge(
-        //     source_region_id,
-        //     &src_start,
-        //     &src_end,
-        //     region.get_id(),
-        //     &tgt_start,
-        //     &tgt_end,
-        // );
+        handle_region_merge(
+            source_region_id,
+            &src_start,
+            &src_end,
+            region.get_id(),
+            &tgt_start,
+            &tgt_end,
+        );
 
 
 

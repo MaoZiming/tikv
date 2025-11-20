@@ -122,9 +122,10 @@ pub fn handle_region_merge(
     //     hex::encode_upper(new_region_end_key)
     // );
 
-    // 1) Locate the old region's guards.
-    let old_guards_ref = match REGION_TO_GUARD_MAP.get(&old_region_id) {
-        Some(guard_vec) => guard_vec,
+    // 1) Atomically remove old region to get consistent snapshot and drop lock immediately.
+    //    This avoids deadlock: we don't hold a read guard while acquiring write guard on new_region.
+    let old_guards = match REGION_TO_GUARD_MAP.remove(&old_region_id) {
+        Some((_, guards)) => guards,
         None => {
             // info!(
             //     "No RangeGuards found for old_region_id={}, nothing to merge.",
@@ -134,52 +135,48 @@ pub fn handle_region_merge(
         }
     };
 
-    // // (Optional) Log a warning if the old region is not fully contained in the
-    // new region. if compare_start_keys(old_region_start_key,
-    // new_region_start_key) == Ordering::Less
-    //     || compare_end_keys(old_region_end_key, new_region_end_key) ==
-    // Ordering::Greater {
-    //     info!("Old region is not fully contained in new region. Some guards may
-    // be out of range.");     return;
-    // }
-
-    // 2) Filter and extend directly: only clone guards that are in range
-    let old_count = old_guards_ref.len();
+    // 2) Filter guards in local memory (no locks held)
+    let old_count = old_guards.len();
     let mut skipped_count = 0;
+    let filtered_guards: Vec<RangeGuard> = old_guards
+        .into_iter()
+        .filter(|guard| {
+            if guard_in_region_range(guard, new_region_start_key, new_region_end_key) {
+                true
+            } else {
+                skipped_count += 1;
+                // info!(
+                //     "Skipping guard not in new region range => guard_value='{}',
+                // range=[{},{})",     guard.guard_value,
+                //     hex::encode_upper(&guard.start_key),
+                //     hex::encode_upper(&guard.end_key)
+                // );
+                false
+            }
+        })
+        .collect();
 
-    let mut new_guards = REGION_TO_GUARD_MAP
-        .entry(new_region_id)
-        .or_insert_with(Vec::new);
-    let new_count_before = new_guards.len();
+    // 3) Extend new region in a separate operation (single lock, no deadlock risk)
+    let new_count_before = {
+        let mut new_guards = REGION_TO_GUARD_MAP
+            .entry(new_region_id)
+            .or_insert_with(Vec::new);
+        let count = new_guards.len();
+        new_guards.extend(filtered_guards);
+        count
+    };
 
-    for guard in old_guards_ref.iter() {
-        if guard_in_region_range(guard, new_region_start_key, new_region_end_key) {
-            new_guards.push(guard.clone());
-        } else {
-            skipped_count += 1;
-            // info!(
-            //     "Skipping guard not in new region range => guard_value='{}',
-            // range=[{},{})",     guard.guard_value,
-            //     hex::encode_upper(&guard.start_key),
-            //     hex::encode_upper(&guard.end_key)
-            // );
-        }
-    }
-
-    // 4) Remove the old region from the map entirely (since it's merged).
-    REGION_TO_GUARD_MAP.remove(&old_region_id);
-
-    // 5) Final log / verification
+    // 4) Final log / verification
     // info!(
     //     "Merged old_region_id={} into new_region_id={}. \
     //     Moved {} guards; skipped {} out-of-range guards. \
-    //     New region had {} => now has {} guards total.",
+    //     New region had {} => now has {} total.",
     //     old_region_id,
     //     new_region_id,
     //     old_count - skipped_count,
     //     skipped_count,
     //     new_count_before,
-    //     new_guards.len()
+    //     new_count_before + (old_count - skipped_count)
     // );
 }
 
@@ -247,6 +244,50 @@ pub fn filter_region_split(
     //     hex::encode_upper(old_region_start_key),
     //     hex::encode_upper(old_region_end_key)
     // );
+}
+
+/// Handle region split: old_region -> new_region.
+/// Clone guards from old_region that overlap with new_region boundaries.
+pub fn handle_region_split(
+    old_region_id: u64,
+    new_region_id: u64,
+    new_region_start_key: &[u8],
+    new_region_end_key: &[u8],
+) {
+    // 1) Clone snapshot with scoped guard to avoid deadlock
+    let old_guards: Vec<RangeGuard> = {
+        match REGION_TO_GUARD_MAP.get(&old_region_id) {
+            Some(guard_ref) => guard_ref.clone(),
+            None => {
+                // info!("No RangeGuards found for old_region_id={}, nothing to split.", old_region_id);
+                return;
+            }
+        }
+    }; // Read guard dropped here
+
+    // 2) Filter and trim in local memory
+    let new_guards: Vec<RangeGuard> = old_guards
+        .into_iter()
+        .filter_map(|mut guard| {
+            if let Some((overlap_start, overlap_end)) = range_overlap(
+                &guard.start_key,
+                &guard.end_key,
+                new_region_start_key,
+                new_region_end_key,
+            ) {
+                guard.start_key = overlap_start;
+                guard.end_key = overlap_end;
+                Some(guard)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // 3) Insert into new region (single lock, no deadlock risk)
+    if !new_guards.is_empty() {
+        REGION_TO_GUARD_MAP.insert(new_region_id, new_guards);
+    }
 }
 
 pub fn handle_region_split_with_old_guards(
