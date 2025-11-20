@@ -121,8 +121,6 @@ enum DelayReason {
     Shutdown,
 }
 
-
-
 /// Limits the maximum number of regions returned by error.
 ///
 /// Another choice is using coprocessor batch limit, but 10 should be a good fit
@@ -636,20 +634,6 @@ where
                         let wait_time = sent_time.saturating_elapsed().as_secs_f64();
                         self.ctx.raft_metrics.process_wait_time.observe(wait_time);
                     }
-
-                    // let guard_value = msg.msg.get_guard_value();
-                    // let region_id = msg.msg.get_region_id();
-                    // if !guard_value.is_empty() && guard_value != "None" {
-                    //     info!(
-                    //         "PeerFsmDelegate received raft message";
-                    //         "region_id" => region_id,
-                    //         "from_peer_id" => msg.msg.get_from_peer().get_id(),
-                    //         "to_peer_id" => msg.msg.get_to_peer().get_id(),
-                    //         "guard_value" => guard_value,
-                    //     );
-                    //     set_region_guard_from_string(region_id, guard_value.to_string());
-                    // }
-                
                     if !self.ctx.coprocessor_host.on_raft_message(&msg.msg) {
                         continue;
                     }

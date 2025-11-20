@@ -1573,13 +1573,6 @@ where
                     if let Some(p) = find_peer_by_id(&self.region, self.id()) {
                         self.peer = p.clone();
                     }
-                    // let region_id = self.region.get_id();
-                    // let region_guard = self.region.get_guard_value();
-                    // info!(
-                    //     "ExecResult::ChangePeer, region_id: {}, guard: {}, guard_value: {}",
-                    //     region_id, region_guard, cp.guard_value
-                    // );
-                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::ComputeHash { .. }
                 | ExecResult::VerifyHash { .. }
@@ -1587,16 +1580,7 @@ where
                 | ExecResult::DeleteRange { .. }
                 | ExecResult::IngestSst { .. }
                 | ExecResult::TransferLeader { .. }
-                | ExecResult::HasPendingCompactCmd(..) => {
-                    // let region_id = self.region.get_id();
-                    // let region_guard = self.region.get_guard_value();
-                    // info!(
-                    //     "ExecResult::<Other>, region_id: {}, guard: {}",
-                    //     region_id, region_guard
-                    // );
-                    // set_region_guard_from_string(region_id, region_guard);
-
-                }
+                | ExecResult::HasPendingCompactCmd(..) => {}
                 ExecResult::SplitRegion { ref derived, .. } => {
                     self.region = derived.clone();
                     self.metrics.size_diff_hint = 0;
@@ -1611,24 +1595,10 @@ where
                 ExecResult::PrepareMerge { ref region, .. } => {
                     self.region = region.clone();
                     self.is_merging = true;
-                    // let region_id = self.region.get_id();
-                    // let region_guard = self.region.get_guard_value();
-                    // info!(
-                    //     "ExecResult::PrepareMerge, region_id: {}, guard: {}",
-                    //     region_id, region_guard
-                    // );
-                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::CommitMerge { ref region, .. } => {
                     self.region = region.clone();
                     self.last_merge_version = region.get_region_epoch().get_version();
-                    // let region_id = self.region.get_id();
-                    // let region_guard = self.region.get_guard_value();
-                    // info!(
-                    //     "ExecResult::CommitMerge, region_id: {}, guard: {}",
-                    //     region_id, region_guard
-                    // );
-                    // set_region_guard_from_string(region_id, region_guard);
                 }
                 ExecResult::RollbackMerge { ref region, .. } => {
                     self.region = region.clone();
@@ -2708,38 +2678,6 @@ where
             new_region.set_start_key(keys.pop_front().unwrap());
             new_region.set_end_key(keys.front().unwrap().to_vec());
             new_region.set_peers(derived.get_peers().to_vec().into());
-
-            // SPLIT: drop guard on all split region..
-            // new_region.set_guard_value("default_guard".to_string());
-            // self.region.set_guard_value("default_guard".to_string());
-
-            // if let Some(guard) = get_region_guard(self.region.get_id()) {
-            //     info!("self.region {} guard: {}", self.region.get_id(), guard);
-            // } else {
-            //     info!("self.region {} has no guard value", self.region.get_id());
-            // }
-
-            let _old_start = Key::from_encoded(self.region.get_start_key().to_vec())
-            .to_raw()
-            .unwrap_or_else(|e| {
-                error!(
-                    "failed to decode region start key: {:?}, original key: {:?}, using self.region.get_start_key() as fallback",
-                    e,
-                    self.region.get_start_key().to_vec()
-                );
-                self.region.get_start_key().to_vec()
-            });
-        
-            let _old_end = Key::from_encoded(self.region.get_end_key().to_vec())
-                .to_raw()
-                .unwrap_or_else(|e| {
-                    error!(
-                        "failed to decode region end key: {:?}, original key: {:?}, using self.region.get_end_key() as fallback",
-                        e,
-                        self.region.get_end_key().to_vec()
-                    );
-                    self.region.get_end_key().to_vec()
-                });
             
             let new_start = Key::from_encoded(new_region.get_start_key().to_vec())
                 .to_raw()
@@ -2762,42 +2700,12 @@ where
                     );
                     new_region.get_end_key().to_vec()
                 });
-
-            // handle_region_split(
-            //     self.region.get_id(),
-            //     &old_start,
-            //     &old_end,
-            //     new_region.get_id(),
-            //     &new_start,
-            //     &new_end,
-            // );
-
             handle_region_split_with_old_guards(
                 old_guards.clone(),  // Pass a clone (or a reference if you can guarantee immutability)
                 new_region.get_id(),
                 &new_start,
                 &new_end
             );
-
-            // info!(
-            //     "handle_region_split: region_id={}, guard_value={}",
-            //     new_region.get_id(),
-            //     get_region_guard(new_region.get_id()).unwrap_or_else(|| "".to_string())
-            // );
-
-            // if let Some(guard) = get_region_guard(self.region.get_id()) {
-            //     info!("self.region {} guard: {}", self.region.get_id(), guard);
-            // } else {
-            //     info!("self.region {} has no guard value", self.region.get_id());
-            // }
-
-            // if let Some(guard) = get_region_guard(new_region.get_id()) {
-            //     info!("new_region {} guard: {}", new_region.get_id(), guard);
-
-            // } else {
-            //     info!("new_region has no guard value");
-            // }
-
             for (peer, peer_id) in new_region
                 .mut_peers()
                 .iter_mut()
@@ -2842,12 +2750,6 @@ where
         });
 
         filter_region_split(old_guards.clone(), derived.get_id(), &derived_start, &derived_end);
-        // info!(
-        //     "filter_region_split: region_id={}, guard_value={}",
-        //     derived.get_id(),
-        //     get_region_guard(derived.get_id()).unwrap_or_else(|| "None".to_string())
-        // );
-        // derived.set_guard_value("default_guard".to_string());
 
         // Generally, a peer is created in pending_create_peers when it is
         // created by raft_message (or by split here) and removed from
@@ -3208,14 +3110,14 @@ where
             });
 
         // Now call handle_region_merge with the raw keys.
-        handle_region_merge(
-            source_region_id,
-            &src_start,
-            &src_end,
-            region.get_id(),
-            &tgt_start,
-            &tgt_end,
-        );
+        // handle_region_merge(
+        //     source_region_id,
+        //     &src_start,
+        //     &src_end,
+        //     region.get_id(),
+        //     &tgt_start,
+        //     &tgt_end,
+        // );
 
 
 

@@ -5372,21 +5372,6 @@ where
             replication_status: self.region_replication_status(ctx),
             wait_data_peers: self.wait_data_peers.clone(),
         });
-
-        let _region_id = self.region().get_id();
-        // let mut guard_value = self.region().guard_value.clone(); // Ensure guard_value exists
-        
-
-        // if let Some(guard_value_from_store) = get_region_guard(region_id) {
-        //     guard_value = guard_value_from_store;
-        //     info!(
-        //         "heartbeat_pd Task Created: region_id={}, guard_value={}",
-        //         region_id, guard_value
-        //     );
-        // }
-
-
-
         if let Err(e) = ctx.pd_scheduler.schedule(task) {
             error!(
                 "failed to notify pd";
@@ -5405,26 +5390,6 @@ where
         // set current epoch
         send_msg.set_region_epoch(self.region().get_region_epoch().clone());
         send_msg.set_from_peer(self.peer.clone());
-        // let guard_value = if self.is_leader() {
-        //     get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
-        //     // "None".to_string()
-        // } else {
-        //     "None".to_string()
-        // };
-
-        // send_msg.set_guard_value(guard_value.clone());
-    
-        // // Log the prepared Raft message details.
-        // if guard_value != "None" {
-        //     info!(
-        //         "prepare_raft_message";
-        //         "peer_id" => self.peer.get_id(),
-        //         "region_id" => self.region_id,
-        //         "guard_value" => guard_value,
-        //         "role" => if self.is_leader() { "leader" } else { "follower" },
-        //     );
-        // }
-    
         send_msg
     }
 
@@ -5504,25 +5469,6 @@ where
             send_msg.set_start_key(region.get_start_key().to_vec());
             send_msg.set_end_key(region.get_end_key().to_vec());
         }
-
-        // let guard_value = if self.is_leader() {
-        //     get_region_guard(self.region_id).unwrap_or_else(|| "None".to_string())
-        //     // "None".to_string()
-        // } else {
-        //     "None".to_string()
-        // };
-
-        // send_msg.set_guard_value(guard_value.clone());
-        // if guard_value != "None" {
-        //     info!(
-        //         "build_raft_message";
-        //         "peer_id" => self.peer.get_id(),
-        //         "region_id" => self.region_id,
-        //         "guard_value" => guard_value,
-        //         "role" => if self.is_leader() { "leader" } else { "follower" },
-        //     );
-        // }
-
         send_msg.set_message(msg);
 
         Some(send_msg)

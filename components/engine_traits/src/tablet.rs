@@ -9,8 +9,6 @@ use std::{
     },
 };
 
-
-
 use collections::HashMap;
 use kvproto::metapb::Region;
 use tikv_util::box_err;
